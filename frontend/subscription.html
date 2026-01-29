@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خطط الاشتراك - مدير المصروفات الذكي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>مدير المصروفات الذكي</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="index.html#features">المميزات</a></li>
+                    <li><a href="subscription.html" class="active">الاشتراكات</a></li>
+                    <li><a href="#" onclick="showLoginModal()">تسجيل الدخول</a></li>
+                </ul>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Subscription Plans Section -->
+    <section class="subscription-section">
+        <div class="container">
+            <div class="section-header">
+                <h1>اختر الخطة المناسبة لك</h1>
+                <p>جميع الخطط تشمل تجربة مجانية لمدة 14 يوم</p>
+            </div>
+
+            <div class="pricing-toggle">
+                <span class="toggle-label">شهري</span>
+                <label class="switch">
+                    <input type="checkbox" id="pricingToggle" onchange="togglePricing()">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">سنوي <span class="save-badge">وفر 20%</span></span>
+            </div>
+
+            <div class="pricing-cards">
+                <!-- Free Plan -->
+                <div class="pricing-card">
+                    <div class="plan-badge">مجاني</div>
+                    <h3 class="plan-name">الخطة المجانية</h3>
+                    <div class="plan-price">
+                        <span class="currency">ريال</span>
+                        <span class="amount">0</span>
+                        <span class="period">/شهرياً</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> 50 مصروف شهرياً</li>
+                        <li><i class="fas fa-check"></i> 10 مواعيد شهرياً</li>
+                        <li><i class="fas fa-check"></i> تقارير أساسية</li>
+                        <li><i class="fas fa-check"></i> تخزين سحابي 100 ميجا</li>
+                        <li class="disabled"><i class="fas fa-times"></i> ذكاء اصطناعي</li>
+                        <li class="disabled"><i class="fas fa-times"></i> تسجيل صوتي</li>
+                        <li class="disabled"><i class="fas fa-times"></i> تذكيرات واتساب</li>
+                        <li class="disabled"><i class="fas fa-times"></i> دعم فني مباشر</li>
+                    </ul>
+                    <button class="btn btn-secondary btn-block" onclick="selectPlan('free')">
+                        ابدأ مجاناً
+                    </button>
+                </div>
+
+                <!-- Basic Plan -->
+                <div class="pricing-card">
+                    <div class="plan-badge plan-badge-blue">أساسية</div>
+                    <h3 class="plan-name">الخطة الأساسية</h3>
+                    <div class="plan-price">
+                        <span class="currency">ريال</span>
+                        <span class="amount monthly-price">29</span>
+                        <span class="amount yearly-price" style="display:none;">279</span>
+                        <span class="period monthly-period">/شهرياً</span>
+                        <span class="period yearly-period" style="display:none;">/سنوياً</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> مصروفات غير محدودة</li>
+                        <li><i class="fas fa-check"></i> مواعيد غير محدودة</li>
+                        <li><i class="fas fa-check"></i> تقارير متقدمة</li>
+                        <li><i class="fas fa-check"></i> تخزين سحابي 5 جيجا</li>
+                        <li><i class="fas fa-check"></i> ذكاء اصطناعي</li>
+                        <li><i class="fas fa-check"></i> تسجيل صوتي</li>
+                        <li class="disabled"><i class="fas fa-times"></i> تذكيرات واتساب</li>
+                        <li class="disabled"><i class="fas fa-times"></i> دعم فني مباشر</li>
+                    </ul>
+                    <button class="btn btn-primary btn-block" onclick="selectPlan('basic')">
+                        اشترك الآن
+                    </button>
+                </div>
+
+                <!-- Premium Plan -->
+                <div class="pricing-card featured">
+                    <div class="popular-badge">الأكثر شعبية</div>
+                    <div class="plan-badge plan-badge-gold">بريميوم</div>
+                    <h3 class="plan-name">الخطة المميزة</h3>
+                    <div class="plan-price">
+                        <span class="currency">ريال</span>
+                        <span class="amount monthly-price">59</span>
+                        <span class="amount yearly-price" style="display:none;">567</span>
+                        <span class="period monthly-period">/شهرياً</span>
+                        <span class="period yearly-period" style="display:none;">/سنوياً</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> كل مميزات الخطة الأساسية</li>
+                        <li><i class="fas fa-check"></i> تخزين سحابي غير محدود</li>
+                        <li><i class="fas fa-check"></i> تذكيرات واتساب</li>
+                        <li><i class="fas fa-check"></i> دعم فني مباشر 24/7</li>
+                        <li><i class="fas fa-check"></i> تقارير مخصصة</li>
+                        <li><i class="fas fa-check"></i> تحليلات متقدمة بالذكاء الاصطناعي</li>
+                        <li><i class="fas fa-check"></i> إدارة فريق (5 مستخدمين)</li>
+                        <li><i class="fas fa-check"></i> أولوية في الميزات الجديدة</li>
+                    </ul>
+                    <button class="btn btn-primary btn-block btn-premium" onclick="selectPlan('premium')">
+                        <i class="fas fa-crown"></i> اشترك في البريميوم
+                    </button>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="comparison-section">
+                <h2>مقارنة شاملة بين الخطط</h2>
+                <div class="comparison-table-wrapper">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>الميزة</th>
+                                <th>مجاني</th>
+                                <th>أساسي</th>
+                                <th>بريميوم</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>عدد المصروفات</td>
+                                <td>50/شهر</td>
+                                <td>غير محدود</td>
+                                <td>غير محدود</td>
+                            </tr>
+                            <tr>
+                                <td>عدد المواعيد</td>
+                                <td>10/شهر</td>
+                                <td>غير محدود</td>
+                                <td>غير محدود</td>
+                            </tr>
+                            <tr>
+                                <td>الذكاء الاصطناعي</td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>التسجيل الصوتي</td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>تذكيرات واتساب</td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>التخزين السحابي</td>
+                                <td>100 ميجا</td>
+                                <td>5 جيجا</td>
+                                <td>غير محدود</td>
+                            </tr>
+                            <tr>
+                                <td>الدعم الفني</td>
+                                <td>بريد إلكتروني</td>
+                                <td>بريد + شات</td>
+                                <td>24/7 مباشر</td>
+                            </tr>
+                            <tr>
+                                <td>إدارة الفريق</td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td>5 مستخدمين</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="faq-section">
+                <h2>الأسئلة الشائعة</h2>
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFAQ(this)">
+                            <span>هل يمكنني تغيير الخطة لاحقاً؟</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            نعم، يمكنك الترقية أو التخفيض في أي وقت. سيتم احتساب الفرق بشكل تناسبي.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFAQ(this)">
+                            <span>ما هي طرق الدفع المتاحة؟</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            نقبل جميع البطاقات الائتمانية (Visa, Mastercard, Mada) وكذلك Apple Pay و STC Pay.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFAQ(this)">
+                            <span>هل هناك رسوم خفية؟</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            لا، السعر المعروض هو السعر النهائي بدون أي رسوم إضافية.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFAQ(this)">
+                            <span>هل يمكنني إلغاء الاشتراك في أي وقت؟</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            نعم بالتأكيد، يمكنك إلغاء اشتراكك في أي وقت بدون أي التزامات. ستستمر في استخدام الخدمة حتى نهاية الفترة المدفوعة.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFAQ(this)">
+                            <span>ماذا يحدث لبياناتي عند إلغاء الاشتراك؟</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            بياناتك محفوظة بشكل آمن. يمكنك تصديرها في أي وقت. عند إلغاء الاشتراك، ستنتقل للخطة المجانية ويمكنك الترقية مرة أخرى متى شئت.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>عن التطبيق</h4>
+                    <p>مدير المصروفات الذكي - حلك الأمثل لإدارة مصروفاتك ومواعيدك</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <ul>
+                        <li><a href="index.html">الرئيسية</a></li>
+                        <li><a href="subscription.html">الاشتراكات</a></li>
+                        <li><a href="index.html#features">المميزات</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>تواصل معنا</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 مدير المصروفات الذكي. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>تسجيل الدخول</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> دخول
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        function togglePricing() {
+            const toggle = document.getElementById('pricingToggle');
+            const monthlyPrices = document.querySelectorAll('.monthly-price');
+            const yearlyPrices = document.querySelectorAll('.yearly-price');
+            const monthlyPeriods = document.querySelectorAll('.monthly-period');
+            const yearlyPeriods = document.querySelectorAll('.yearly-period');
+
+            if (toggle.checked) {
+                monthlyPrices.forEach(el => el.style.display = 'none');
+                yearlyPrices.forEach(el => el.style.display = 'inline');
+                monthlyPeriods.forEach(el => el.style.display = 'none');
+                yearlyPeriods.forEach(el => el.style.display = 'inline');
+            } else {
+                monthlyPrices.forEach(el => el.style.display = 'inline');
+                yearlyPrices.forEach(el => el.style.display = 'none');
+                monthlyPeriods.forEach(el => el.style.display = 'inline');
+                yearlyPeriods.forEach(el => el.style.display = 'none');
+            }
+        }
+
+        function selectPlan(plan) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showLoginModal();
+                localStorage.setItem('selectedPlan', plan);
+                return;
+            }
+            alert(`جاري تفعيل خطة ${plan}...`);
+            // هنا يتم التوجيه لصفحة الدفع
+        }
+
+        function toggleFAQ(element) {
+            const faqItem = element.parentElement;
+            const answer = faqItem.querySelector('.faq-answer');
+            const icon = element.querySelector('i');
+
+            faqItem.classList.toggle('active');
+            
+            if (faqItem.classList.contains('active')) {
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                answer.style.maxHeight = '0';
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+</body>
+</html>

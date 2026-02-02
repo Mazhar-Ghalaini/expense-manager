@@ -19,7 +19,7 @@ const simpleAuth = async (req, res, next) => {
             });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'anySecretKey');
         
         const User = require('../models/User');
         const user = await User.findById(decoded.id);

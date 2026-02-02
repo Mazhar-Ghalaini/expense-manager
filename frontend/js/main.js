@@ -4,6 +4,7 @@
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000/api'
     : `${window.location.origin}/api`;
+
 // ==========================================
 // Modal Functions
 // ==========================================
@@ -74,9 +75,13 @@ async function handleLogin(event) {
         
         console.log('📥 استجابة تسجيل الدخول:', data);
         
-        if (data.success) {
+        if (data.success && data.token) {
+            // ✅ الإصلاح: حفظ التوكن والمستخدم بشكل صحيح
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
+            
+            console.log('✅ تم حفظ التوكن:', data.token.substring(0, 20) + '...');
+            console.log('✅ تم حفظ بيانات المستخدم:', data.user);
             
             showAlert('✅ تم تسجيل الدخول بنجاح!', 'success');
             
@@ -171,9 +176,13 @@ async function handleRegister(event) {
         
         console.log('📥 استجابة التسجيل:', data);
         
-        if (data.success) {
+        if (data.success && data.token) {
+            // ✅ الإصلاح: حفظ التوكن والمستخدم بشكل صحيح
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
+            
+            console.log('✅ تم حفظ التوكن:', data.token.substring(0, 20) + '...');
+            console.log('✅ تم حفظ بيانات المستخدم:', data.user);
             
             showAlert(`✅ تم إنشاء حسابك بنجاح! جاري تحويلك...`, 'success');
             
@@ -279,7 +288,6 @@ async function loadSiteSettings() {
             
             console.log('✅ تم تحميل الإعدادات:', settings);
             
-            // تحديث عنوان الصفحة
             if (settings.siteName) {
                 document.title = settings.siteName;
                 const siteNameElements = document.querySelectorAll('#siteName, .logo span');
@@ -288,7 +296,6 @@ async function loadSiteSettings() {
                 });
             }
             
-            // تحديث وصف الصفحة
             if (settings.siteDescription) {
                 const metaDescription = document.querySelector('meta[name="description"]');
                 if (metaDescription) {
@@ -296,7 +303,6 @@ async function loadSiteSettings() {
                 }
             }
             
-            // تحديث Hero Section
             if (settings.homepage) {
                 const heroTitle = document.getElementById('heroTitle');
                 const heroDescription = document.getElementById('heroDescription');
@@ -314,7 +320,6 @@ async function loadSiteSettings() {
                     heroImage.src = settings.homepage.heroImage;
                 }
                 
-                // تحديث CTA
                 const ctaTitle = document.getElementById('ctaTitle');
                 const ctaDescription = document.getElementById('ctaDescription');
                 
@@ -327,7 +332,6 @@ async function loadSiteSettings() {
                 }
             }
             
-            // تحديث Footer
             if (settings.footer) {
                 const footerAbout = document.getElementById('footerAbout');
                 const footerCopyright = document.getElementById('footerCopyright');
@@ -340,23 +344,19 @@ async function loadSiteSettings() {
                     footerCopyright.textContent = settings.footer.copyright;
                 }
                 
-                // تحديث روابط التواصل الاجتماعي
                 if (settings.footer.socialLinks) {
                     updateSocialLinks(settings.footer.socialLinks);
                 }
                 
-                // تحديث روابط Footer
                 if (settings.footer.quickLinks) {
                     updateFooterLinks(settings.footer.quickLinks);
                 }
             }
             
-            // تحديث Header Links
             if (settings.header?.links) {
                 updateHeaderLinks(settings.header.links);
             }
             
-            // تحديث الألوان
             if (settings.colors) {
                 applyColors(settings.colors);
             }
@@ -365,38 +365,27 @@ async function loadSiteSettings() {
         }
     } catch (error) {
         console.error('❌ خطأ في تحميل إعدادات الموقع:', error);
-        // لا نعرض رسالة خطأ للمستخدم، نستخدم القيم الافتراضية
     }
 }
 
-// ==========================================
-// تحديث روابط Header
-// ==========================================
 function updateHeaderLinks(links) {
     const navMenu = document.getElementById('navMenu');
     if (!navMenu || !links || links.length === 0) return;
     
-    // احتفظ بزر تسجيل الدخول
     const loginButton = `<li><a href="javascript:void(0)" onclick="showLoginModal(); return false;">تسجيل الدخول</a></li>`;
     
-    // بناء القائمة من الروابط المخصصة
     let menuHTML = '';
     links.forEach((link, index) => {
         const activeClass = index === 0 ? 'active' : '';
         menuHTML += `<li><a href="${link.url}" class="${activeClass}">${link.title}</a></li>`;
     });
     
-    // إضافة زر تسجيل الدخول في النهاية
     menuHTML += loginButton;
-    
     navMenu.innerHTML = menuHTML;
     
     console.log('✅ تم تحميل روابط Header');
 }
 
-// ==========================================
-// تحديث روابط Footer
-// ==========================================
 function updateFooterLinks(links) {
     const footerLinksContainer = document.getElementById('footerLinks');
     if (!footerLinksContainer || !links || links.length === 0) return;
@@ -415,9 +404,6 @@ function updateFooterLinks(links) {
     console.log('✅ تم تحديث روابط Footer');
 }
 
-// ==========================================
-// تحديث روابط التواصل الاجتماعي
-// ==========================================
 function updateSocialLinks(socialLinks) {
     const container = document.getElementById('socialLinks');
     if (!container) return;
@@ -445,7 +431,6 @@ function updateSocialLinks(socialLinks) {
         }
     });
     
-    // إذا لم يكن هناك روابط، أضف الافتراضية
     if (!hasLinks) {
         container.innerHTML = `
             <a href="#"><i class="fab fa-facebook"></i></a>
@@ -456,37 +441,17 @@ function updateSocialLinks(socialLinks) {
     }
 }
 
-// ==========================================
-// تطبيق الألوان على الموقع
-// ==========================================
 function applyColors(colors) {
     if (!colors) return;
     
     const root = document.documentElement;
     
-    if (colors.primary) {
-        root.style.setProperty('--primary-color', colors.primary);
-    }
-    
-    if (colors.secondary) {
-        root.style.setProperty('--secondary-color', colors.secondary);
-    }
-    
-    if (colors.danger) {
-        root.style.setProperty('--danger-color', colors.danger);
-    }
-    
-    if (colors.warning) {
-        root.style.setProperty('--warning-color', colors.warning);
-    }
-    
-    if (colors.dark) {
-        root.style.setProperty('--dark-color', colors.dark);
-    }
-    
-    if (colors.light) {
-        root.style.setProperty('--light-color', colors.light);
-    }
+    if (colors.primary) root.style.setProperty('--primary-color', colors.primary);
+    if (colors.secondary) root.style.setProperty('--secondary-color', colors.secondary);
+    if (colors.danger) root.style.setProperty('--danger-color', colors.danger);
+    if (colors.warning) root.style.setProperty('--warning-color', colors.warning);
+    if (colors.dark) root.style.setProperty('--dark-color', colors.dark);
+    if (colors.light) root.style.setProperty('--light-color', colors.light);
     
     console.log('🎨 تم تطبيق الألوان المخصصة');
 }
@@ -497,10 +462,8 @@ function applyColors(colors) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ الصفحة جاهزة');
     
-    // تحميل إعدادات الموقع
     loadSiteSettings();
     
-    // Hamburger Menu
     const hamburger = document.querySelector('.hamburger');
     const navMenu = document.querySelector('.nav-menu');
     
@@ -511,7 +474,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Close modal when clicking outside
     window.addEventListener('click', function(event) {
         if (event.target.classList.contains('modal')) {
             const modalId = event.target.id;
@@ -519,7 +481,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Close modal on ESC key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             const modals = document.querySelectorAll('.modal.active');
@@ -529,7 +490,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // التحقق من تسجيل الدخول
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
     
@@ -538,9 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ==========================================
-// Smooth Scroll
-// ==========================================
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
@@ -559,9 +516,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// ==========================================
-// Animations CSS
-// ==========================================
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideDown {
@@ -588,9 +542,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// ==========================================
-// Console Message
-// ==========================================
 console.log('%c مدير المصروفات الذكي ', 
     'background: #4a90e2; color: white; font-size: 20px; padding: 10px; border-radius: 5px;');
 console.log('%c تطبيق إدارة المصروفات والمواعيد بالذكاء الاصطناعي ', 

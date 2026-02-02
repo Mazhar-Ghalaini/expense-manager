@@ -15,7 +15,8 @@ const auth = async (req, res, next) => {
         }
 
         // التحقق من التوكن
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'anySecretKey');
+
 
         // البحث عن المستخدم
         const user = await User.findById(decoded.id).select('-password');

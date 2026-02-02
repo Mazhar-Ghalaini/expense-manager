@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>التذكيرات - إدارة المصروفات</title>
+    
+    <!-- الأيقونات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- التصميم الأساسي -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- تصميم الموبايل -->
+    <link rel="stylesheet" href="css/mobile.css">
+
     <style>
         * {
             margin: 0;
@@ -28,6 +37,27 @@
             position: sticky;
             top: 0;
             z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-left h2 {
+            font-size: 20px;
+            color: #2c3e50;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #667eea;
+            background: none;
+            border: none;
+            padding: 5px;
         }
 
         .header-right {
@@ -65,7 +95,6 @@
             justify-content: center;
             color: white;
             cursor: pointer;
-            position: relative;
         }
 
         .search-icon {
@@ -88,6 +117,10 @@
             top: 70px;
             height: calc(100vh - 70px);
             overflow-y: auto;
+        }
+
+        .sidebar-overlay {
+            display: none;
         }
 
         .menu-item {
@@ -170,6 +203,30 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -178,14 +235,38 @@
         }
 
         .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.stat-card .stat-icon {
+    order: 2;
+}
+
+.stat-card .stat-info {
+    order: 1;
+    text-align: right;
+}
+
+.stat-info h3 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.stat-info p {
+    font-size: 32px !important;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0;
+    line-height: 1;
+}
 
         .stat-card.success .stat-icon {
             background: #e8f5e9;
@@ -238,117 +319,141 @@
         }
 
         .reminder-item {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s;
-            border-right: 4px solid #667eea;
-        }
-        
-        .reminder-item:hover {
-            transform: translateX(-5px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-        
-        .reminder-item.completed {
-            opacity: 0.7;
-            background: #f0f0f0;
-            border-right-color: #4caf50;
-        }
-        
-        .reminder-item.completed h3 {
-            text-decoration: line-through;
-        }
-        
-        .reminder-info h3 {
-            margin-bottom: 5px;
-            color: #2c3e50;
-            font-size: 18px;
-        }
-        
-        .reminder-info p {
-            color: #666;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
-        .reminder-meta {
-            display: flex;
-            gap: 20px;
-            font-size: 14px;
-            color: #999;
-        }
-        
-        .reminder-meta span {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .reminder-meta i {
-            margin-left: 5px;
-        }
-        
-        .reminder-actions {
-            display: flex;
-            gap: 10px;
-        }
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: all 0.3s;
+    border-right: 4px solid #667eea;
+    overflow: hidden;
+    word-wrap: break-word;
+}
 
-        .btn-sm {
-            padding: 8px 12px;
-            font-size: 14px;
-        }
+.reminder-item:hover {
+    transform: translateX(-5px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
 
-        .btn-success {
-            background: #4caf50;
-            color: white;
-        }
+.reminder-item.completed {
+    opacity: 0.7;
+    background: #f0f0f0;
+    border-right-color: #4caf50;
+}
 
-        .btn-success:hover {
-            background: #45a049;
-        }
+.reminder-item.completed h3 {
+    text-decoration: line-through;
+}
 
-        .btn-secondary {
-            background: #9e9e9e;
-            color: white;
-        }
+.reminder-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+}
 
-        .btn-danger {
-            background: #f44336;
-            color: white;
-        }
+.reminder-info {
+    flex: 1;
+    min-width: 0;
+}
 
-        .btn-danger:hover {
-            background: #d32f2f;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #999;
-        }
-        
-        .empty-state i {
-            font-size: 60px;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
+.reminder-info h3 {
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-size: 18px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
 
-        .empty-state p {
-            font-size: 16px;
-            margin: 10px 0;
-        }
+.reminder-info p {
+    color: #666;
+    margin-bottom: 10px;
+    font-size: 14px;
+    word-wrap: break-word;
+}
 
-        .empty-state small {
-            font-size: 14px;
-            color: #bbb;
-        }
+.reminder-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 13px;
+    color: #999;
+}
 
+.reminder-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.reminder-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* إصلاح الأرقام في Stats */
+.stat-info p {
+    font-size: 32px !important;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0;
+    line-height: 1;
+}
+
+/* إصلاح Page Header للموبايل */
+.page-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: 32px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .page-header .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .reminder-content {
+        flex-direction: column;
+    }
+
+    .reminder-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .reminder-meta {
+        font-size: 12px;
+    }
+}
         /* Modal */
         .modal {
             display: none;
@@ -441,90 +546,71 @@
             resize: vertical;
             min-height: 80px;
         }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 70px;
-            }
-            
-            .sidebar .menu-item span {
-                display: none;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .main-content {
-                padding: 20px;
-            }
-
-            .page-header {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
-            }
-        }
     </style>
 </head>
 <body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Header -->
     <div class="header">
         <div class="header-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
             <h2>التذكيرات</h2>
         </div>
         <div class="header-right">
-            <div class="user-info">
-                <span id="userName">مرحباً</span>
-                <div class="user-avatar" id="userAvatar">A</div>
+            <div class="search-icon">
+                <i class="fas fa-search"></i>
             </div>
             <div class="notification-icon">
                 <i class="fas fa-bell"></i>
             </div>
-            <div class="search-icon">
-                <i class="fas fa-search"></i>
+            <div class="user-info">
+                <span id="userName">مرحباً</span>
+                <div class="user-avatar" id="userAvatar">A</div>
             </div>
         </div>
     </div>
 
     <div class="container">
-        <div class="sidebar">
-            <button class="menu-item" data-page="app">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <a href="app.html" class="menu-item">
                 <div class="icon"><i class="fas fa-th-large"></i></div>
                 <span>نظرة عامة</span>
-            </button>
-            <button class="menu-item" data-page="expenses">
+            </a>
+            <a href="expenses.html" class="menu-item">
                 <div class="icon"><i class="fas fa-wallet"></i></div>
                 <span>المصاريف اليومية</span>
-            </button>
-            <button class="menu-item" data-page="appointments">
+            </a>
+            <a href="appointments.html" class="menu-item">
                 <div class="icon"><i class="fas fa-calendar-alt"></i></div>
                 <span>جدول المواعيد</span>
-            </button>
-            <button class="menu-item active" data-page="reminders">
+            </a>
+            <a href="reminders.html" class="menu-item active">
                 <div class="icon"><i class="fas fa-bell"></i></div>
                 <span>تذكيرات</span>
-            </button>
-            <button class="menu-item" data-page="ai">
+            </a>
+            <a href="ai-assistant.html" class="menu-item">
                 <div class="icon"><i class="fas fa-robot"></i></div>
                 <span>الذكاء الاصطناعي</span>
-            </button>
+            </a>
             
             <div class="menu-divider"></div>
             
-            <button class="menu-item" data-page="settings">
+            <a href="settings.html" class="menu-item">
                 <div class="icon"><i class="fas fa-cog"></i></div>
                 <span>إعدادات</span>
-            </button>
-            <button class="menu-item" id="logoutBtn">
+            </a>
+            <button class="menu-item" onclick="logout()">
                 <div class="icon"><i class="fas fa-sign-out-alt"></i></div>
                 <span>تسجيل الخروج</span>
             </button>
         </div>
 
+        <!-- Main Content -->
         <div class="main-content">
             <div class="page-header">
                 <h1>إدارة التذكيرات</h1>
@@ -620,6 +706,37 @@
     <script src="js/app.js"></script>
     <script src="js/reminders.js"></script>
     <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar) sidebar.classList.toggle('active');
+            if (overlay) overlay.classList.toggle('active');
+        }
+
+        // إغلاق القائمة عند اختيار صفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar();
+                    }
+                });
+            });
+        });
+
+        // Logout
+        function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
+
         // Modal functions
         function showAddReminderModal() {
             document.getElementById('addReminderModal').classList.add('active');
@@ -628,6 +745,14 @@
         function closeAddReminderModal() {
             document.getElementById('addReminderModal').classList.remove('active');
             document.getElementById('addReminderForm').reset();
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('addReminderModal');
+            if (event.target === modal) {
+                closeAddReminderModal();
+            }
         }
 
         // Add reminder form
@@ -658,7 +783,7 @@
                 if (data.success) {
                     alert('✅ تم إضافة التذكير بنجاح!');
                     closeAddReminderModal();
-                    loadReminders();
+                    if (typeof loadReminders === 'function') loadReminders();
                 } else {
                     alert('❌ ' + (data.message || 'خطأ في إضافة التذكير'));
                 }
@@ -667,54 +792,6 @@
                 alert('❌ خطأ في إضافة التذكير');
             }
         });
-
-        // Navigation
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuItems = document.querySelectorAll('.menu-item[data-page]');
-            
-            menuItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const page = this.getAttribute('data-page');
-                    
-                    switch(page) {
-                        case 'app':
-                            window.location.href = 'app.html';
-                            break;
-                        case 'expenses':
-                            window.location.href = 'expenses.html';
-                            break;
-                        case 'appointments':
-                            window.location.href = 'appointments.html';
-                            break;
-                        case 'reminders':
-                            window.location.href = 'reminders.html';
-                            break;
-                        case 'ai':
-                            window.location.href = 'ai-assistant.html';
-                            break;
-                        case 'settings':
-                            window.location.href = 'settings.html';
-                            break;
-                    }
-                });
-            });
-
-            document.getElementById('logoutBtn').addEventListener('click', function() {
-                if(confirm('هل تريد تسجيل الخروج؟')) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'index.html';
-                }
-            });
-        });
-
-        // Close modal on outside click
-        window.onclick = function(event) {
-            const modal = document.getElementById('addReminderModal');
-            if (event.target === modal) {
-                closeAddReminderModal();
-            }
-        }
     </script>
 </body>
 </html>

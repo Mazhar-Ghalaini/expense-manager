@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>جدول المواعيد - إدارة المصروفات</title>
+    
+    <!-- الأيقونات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- التصميم الأساسي -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- تصميم الموبايل -->
+    <link rel="stylesheet" href="css/mobile.css">
+
     <style>
         * {
             margin: 0;
@@ -28,6 +37,27 @@
             position: sticky;
             top: 0;
             z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-left h2 {
+            font-size: 20px;
+            color: #2c3e50;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #667eea;
+            background: none;
+            border: none;
+            padding: 5px;
         }
 
         .header-right {
@@ -87,6 +117,10 @@
             top: 70px;
             height: calc(100vh - 70px);
             overflow-y: auto;
+        }
+
+        .sidebar-overlay {
+            display: none;
         }
 
         .menu-item {
@@ -283,78 +317,86 @@
             opacity: 0.5;
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 70px;
-            }
-            .sidebar .menu-item span {
-                display: none;
-            }
-            .form-row {
-                grid-template-columns: 1fr;
-            }
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .form-header h2 {
+            margin: 0;
         }
     </style>
 </head>
 <body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Header -->
     <div class="header">
         <div class="header-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
             <h2>جدول المواعيد</h2>
         </div>
         <div class="header-right">
-            <div class="user-info">
-                <span id="userName">مرحباً</span>
-                <div class="user-avatar" id="userAvatar">A</div>
+            <div class="search-icon">
+                <i class="fas fa-search"></i>
             </div>
             <div class="notification-icon">
                 <i class="fas fa-bell"></i>
             </div>
-            <div class="search-icon">
-                <i class="fas fa-search"></i>
+            <div class="user-info">
+                <span id="userName">مرحباً</span>
+                <div class="user-avatar" id="userAvatar">A</div>
             </div>
         </div>
     </div>
 
     <div class="container">
-        <div class="sidebar">
-            <div class="menu-item">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <a href="app.html" class="menu-item">
                 <div class="icon"><i class="fas fa-chart-line"></i></div>
                 <span>نظرة عامة</span>
-            </div>
-            <div class="menu-item">
+            </a>
+            <a href="expenses.html" class="menu-item">
                 <div class="icon"><i class="fas fa-wallet"></i></div>
                 <span>المصاريف اليومية</span>
-            </div>
-            <div class="menu-item active">
+            </a>
+            <a href="appointments.html" class="menu-item active">
                 <div class="icon"><i class="fas fa-calendar-alt"></i></div>
                 <span>جدول المواعيد</span>
-            </div>
-            <div class="menu-item">
+            </a>
+            <a href="reminders.html" class="menu-item">
                 <div class="icon"><i class="fas fa-bell"></i></div>
                 <span>تذكيرات</span>
-            </div>
-            <div class="menu-item">
+            </a>
+            <a href="ai-assistant.html" class="menu-item">
                 <div class="icon"><i class="fas fa-robot"></i></div>
                 <span>الذكاء الاصطناعي</span>
-            </div>
-            <div class="menu-item">
+            </a>
+            <a href="settings.html" class="menu-item">
                 <div class="icon"><i class="fas fa-cog"></i></div>
                 <span>إعدادات</span>
-            </div>
-            <div class="menu-item">
+            </a>
+            <button class="menu-item" onclick="logout()">
                 <div class="icon"><i class="fas fa-sign-out-alt"></i></div>
                 <span>تسجيل الخروج</span>
-            </div>
+            </button>
         </div>
 
+        <!-- Main Content -->
         <div class="main-content">
             <div class="page-header">
                 <h1>إدارة المواعيد</h1>
             </div>
 
             <div class="form-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h2 style="margin: 0;">إضافة موعد جديد</h2>
+                <div class="form-header">
+                    <h2>إضافة موعد جديد</h2>
                     <button class="btn btn-success" onclick="toggleVoiceAppointment()" id="voiceBtn">
                         <i class="fas fa-microphone"></i>
                         تسجيل صوتي
@@ -420,6 +462,39 @@
     <script>
         let recognition;
         let isRecording = false;
+
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar) sidebar.classList.toggle('active');
+            if (overlay) overlay.classList.toggle('active');
+        }
+
+        // إغلاق القائمة عند اختيار صفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar();
+                    }
+                });
+            });
+
+            loadAppointments();
+        });
+
+        // Logout
+        function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
 
         function toggleReminderEmail() {
             const checkbox = document.getElementById('enableReminder');
@@ -568,84 +643,88 @@
             isRecording ? stopRecording() : startRecording();
         }
 
-function startRecording() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.lang = 'ar-SA';
-    recognition.continuous = false;
-    
-    recognition.onstart = () => {
-        isRecording = true;
-        const btn = document.getElementById('voiceBtn');
-        btn.innerHTML = '<i class="fas fa-stop"></i> إيقاف';
-        btn.style.background = '#f44336';
-        alert('🎤 ابدأ الكلام الآن...');
-    };
-    
-    recognition.onresult = async (event) => {
-        const text = event.results[0][0].transcript;
-        console.log('✅ تم التعرف على:', text);
-        
-        // ملء حقل العنوان
-        document.getElementById('title').value = text;
-        
-        // إضافة الموعد مباشرة
-        const today = new Date().toISOString().split('T')[0];
-        const now = new Date().toTimeString().split(' ')[0].substring(0, 5);
-        
-        const appointmentData = {
-            title: text,
-            date: document.getElementById('date').value || today,
-            time: document.getElementById('time').value || now,
-            description: 'تم الإضافة بالصوت',
-            reminderEnabled: false
-        };
-        
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/appointments`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(appointmentData)
-            });
+        function startRecording() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ar-SA';
+            recognition.continuous = false;
             
-            const data = await response.json();
+            recognition.onstart = () => {
+                isRecording = true;
+                const btn = document.getElementById('voiceBtn');
+                btn.innerHTML = '<i class="fas fa-stop"></i> إيقاف';
+                btn.style.background = '#f44336';
+                alert('🎤 ابدأ الكلام الآن...');
+            };
             
-            if (data.success) {
-                alert('✅ تم إضافة الموعد: ' + text);
-                document.getElementById('appointmentForm').reset();
-                await loadAppointments();
-            } else {
-                alert('❌ خطأ: ' + data.message);
+            recognition.onresult = async (event) => {
+                const text = event.results[0][0].transcript;
+                console.log('✅ تم التعرف على:', text);
+                
+                document.getElementById('title').value = text;
+                
+                const today = new Date().toISOString().split('T')[0];
+                const now = new Date().toTimeString().split(' ')[0].substring(0, 5);
+                
+                const appointmentData = {
+                    title: text,
+                    date: document.getElementById('date').value || today,
+                    time: document.getElementById('time').value || now,
+                    description: 'تم الإضافة بالصوت',
+                    reminderEnabled: false
+                };
+                
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`${API_URL}/appointments`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(appointmentData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('✅ تم إضافة الموعد: ' + text);
+                        document.getElementById('appointmentForm').reset();
+                        await loadAppointments();
+                    } else {
+                        alert('❌ خطأ: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('❌ خطأ في إضافة الموعد');
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('❌ خطأ في التسجيل:', event.error);
+                alert('❌ خطأ: ' + event.error);
+                stopRecording();
+            };
+            
+            recognition.onend = () => {
+                stopRecording();
+            };
+            
+            try {
+                recognition.start();
+            } catch (error) {
+                alert('❌ لا يمكن بدء التسجيل: ' + error.message);
+                stopRecording();
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('❌ خطأ في إضافة الموعد');
         }
-    };
-    
-    recognition.onerror = (event) => {
-        console.error('❌ خطأ في التسجيل:', event.error);
-        alert('❌ خطأ: ' + event.error);
-        stopRecording();
-    };
-    
-    recognition.onend = () => {
-        stopRecording();
-    };
-    
-    try {
-        recognition.start();
-    } catch (error) {
-        alert('❌ لا يمكن بدء التسجيل: ' + error.message);
-        stopRecording();
-    }
-}
 
-        document.addEventListener('DOMContentLoaded', loadAppointments);
+        function stopRecording() {
+            isRecording = false;
+            const btn = document.getElementById('voiceBtn');
+            btn.innerHTML = '<i class="fas fa-microphone"></i> تسجيل صوتي';
+            btn.style.background = '#4caf50';
+            if (recognition) recognition.stop();
+        }
     </script>
 </body>
 </html>

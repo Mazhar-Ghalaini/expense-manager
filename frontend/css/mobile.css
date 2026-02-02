@@ -1,0 +1,386 @@
+/* ==========================================
+   ملف خاص بتصميم الموبايل فقط
+   لا يؤثر على Desktop
+========================================== */
+
+@media (max-width: 768px) {
+    /* ==========================================
+       Header - تصميم موبايل
+    ========================================== */
+    .header {
+        padding: 10px 15px !important;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-left h2 {
+        font-size: 16px !important;
+    }
+
+    /* زر القائمة - يظهر فقط على الموبايل */
+    .menu-toggle {
+        display: block !important;
+        font-size: 24px;
+        cursor: pointer;
+        color: #667eea;
+        background: none;
+        border: none;
+        padding: 5px;
+        order: -1; /* يجعله أول عنصر */
+    }
+
+    /* إخفاء عناصر غير ضرورية */
+    .user-info span {
+        display: none !important;
+    }
+
+    .search-icon {
+        display: none !important;
+    }
+
+    /* تصغير الأيقونات */
+    .user-avatar,
+    .notification-icon {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+    }
+
+    .header-right {
+        gap: 10px !important;
+    }
+
+    /* زر العملة */
+    .currency-btn,
+    div[onclick*="showCurrencyModal"] {
+        padding: 8px 12px !important;
+    }
+
+    .currency-btn span,
+    div[onclick*="showCurrencyModal"] span {
+        font-size: 14px !important;
+    }
+
+    .currency-btn i,
+    div[onclick*="showCurrencyModal"] i {
+        font-size: 14px !important;
+    }
+
+   /* ==========================================
+   Sidebar - قائمة منزلقة
+========================================== */
+.sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 280px !important;
+    height: 100vh !important;
+    z-index: 999 !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.3s ease !important;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.3) !important;
+}
+
+.sidebar.active {
+    transform: translateX(0) !important;
+}
+
+/* لا تخفي النصوص! */
+.sidebar .menu-item span {
+    display: inline !important;
+}
+
+.sidebar .menu-item {
+    padding: 18px 25px !important;
+}
+
+/* Overlay خلف القائمة */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+    /* ==========================================
+       Main Content
+    ========================================== */
+    .main-content {
+        margin-right: 0 !important;
+        padding: 20px 15px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* ==========================================
+       Stats Cards
+    ========================================== */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    .stat-card {
+        padding: 20px !important;
+    }
+
+    .stat-card .number,
+    .stat-card h1 {
+        font-size: 32px !important;
+    }
+
+    .stat-card h3 {
+        font-size: 14px !important;
+    }
+
+    .stat-info p {
+        font-size: 1.8rem !important;
+    }
+
+    /* ==========================================
+       Welcome Section
+    ========================================== */
+    .welcome-section h1 {
+        font-size: 24px !important;
+    }
+
+    .welcome-section {
+        margin-bottom: 25px !important;
+    }
+
+    .page-title h1 {
+        font-size: 24px !important;
+    }
+
+    /* ==========================================
+       Charts
+    ========================================== */
+    .charts-section {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+
+    .chart-card {
+        padding: 20px !important;
+    }
+
+    .chart-header {
+        flex-direction: column !important;
+        gap: 15px !important;
+        align-items: flex-start !important;
+    }
+
+    .chart-header h2 {
+        font-size: 18px !important;
+    }
+
+    canvas {
+        max-height: 250px !important;
+    }
+
+    /* ==========================================
+       Forms
+    ========================================== */
+    .form-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .expense-form-card,
+    .expenses-list-card,
+    .appointments-card {
+        padding: 20px !important;
+    }
+
+    .expense-form-card h2 {
+        font-size: 20px !important;
+    }
+
+    /* ==========================================
+       Buttons
+    ========================================== */
+    .action-buttons {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* ==========================================
+       Expense Items
+    ========================================== */
+    .expense-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 15px !important;
+    }
+
+    .expense-info {
+        width: 100% !important;
+    }
+
+    .expense-amount {
+        font-size: 1.5rem !important;
+        margin: 10px 0 !important;
+    }
+
+    .expense-actions {
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    /* ==========================================
+       Appointments
+    ========================================== */
+    .appointment-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 15px !important;
+    }
+
+    .appointment-details {
+        width: 100% !important;
+    }
+
+    .appointment-actions {
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    /* ==========================================
+       Modal
+    ========================================== */
+    .modal-content {
+        width: 95% !important;
+        padding: 25px 20px !important;
+        max-height: 85vh !important;
+    }
+
+    .modal h2 {
+        font-size: 22px !important;
+    }
+
+    /* ==========================================
+       Filter Buttons
+    ========================================== */
+    .filter-buttons {
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        padding-bottom: 10px !important;
+    }
+
+    .filter-btn {
+        display: inline-block !important;
+    }
+
+    /* ==========================================
+       Hero Section (الصفحة الرئيسية)
+    ========================================== */
+    .hero .container {
+        grid-template-columns: 1fr !important;
+        text-align: center !important;
+    }
+
+    .hero-title {
+        font-size: 2rem !important;
+    }
+
+    .hero-description {
+        font-size: 1rem !important;
+    }
+
+    .hero-buttons {
+        flex-direction: column !important;
+    }
+
+    /* ==========================================
+       Features Grid
+    ========================================== */
+    .features-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ==========================================
+       Navbar للصفحة الرئيسية
+    ========================================== */
+    .nav-menu {
+        display: none !important;
+    }
+
+    .hamburger {
+        display: flex !important;
+    }
+
+    /* ==========================================
+       Settings Page
+    ========================================== */
+    .settings-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .setting-card {
+        padding: 20px !important;
+    }
+
+    /* ==========================================
+       AI Assistant Page
+    ========================================== */
+    .chat-container {
+        height: calc(100vh - 200px) !important;
+    }
+
+    .chat-message {
+        max-width: 85% !important;
+    }
+}
+
+/* ==========================================
+   للشاشات الصغيرة جداً (أقل من 480px)
+========================================== */
+@media (max-width: 480px) {
+    .header-left h2 {
+        display: none !important;
+    }
+
+    .sidebar {
+        width: 260px !important;
+    }
+
+    .stat-card .number {
+        font-size: 28px !important;
+    }
+
+    .expense-amount {
+        font-size: 1.2rem !important;
+    }
+
+    .modal-content {
+        padding: 20px 15px !important;
+    }
+
+    .hero-title {
+        font-size: 1.75rem !important;
+    }
+}

@@ -44,7 +44,7 @@ if (!fs.existsSync(uploadsDir)) {
 const createDefaultAdmin = async () => {
   try {
     // حذف جميع حسابات الأدمن القديمة
-    await User.deleteMany({ email: 'admin@admin.com' });
+   // await User.deleteMany({ email: 'admin@admin.com' });
     
     // إنشاء أدمن جديد
     const admin = await User.create({
@@ -197,11 +197,16 @@ setTimeout(createDefaultSettings, 3000);
 // ==========================================
 // API Routes
 // ==========================================
+const dashboardRoutes = require('./routes/dashboard');
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/appointments', require('./routes/appointments'));
+app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api', dashboardRoutes);
+
 
 // ==========================================
 // Health check

@@ -1,10 +1,24 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { generateToken } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 const { getCurrency } = require('../config/currencies');
 
+// ==========================================
+// دالة توليد Token
+// ==========================================
+const generateToken = (userId) => {
+  return jwt.sign(
+    { id: userId },
+    process.env.JWT_SECRET || 'anySecretKey',
+    { expiresIn: '30d' }
+  );
+};
+
+// ==========================================
 // Register - مع دعم العملات
+// ==========================================
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone, currencyCode } = req.body;
@@ -81,22 +95,48 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// ==========================================
 // Login - مع إرجاع العملة
+// ==========================================
 router.post('/login', async (req, res) => {
   try {
+    console.log('🔐 محاولة تسجيل دخول:', req.body.email);
+    
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: 'بيانات الدخول غير صحيحة' });
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'الرجاء إدخال البريد الإلكتروني وكلمة المرور' 
+      });
     }
 
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      console.log('❌ المستخدم غير موجود');
+      return res.status(401).json({ 
+        success: false,
+        message: 'بيانات الدخول غير صحيحة' 
+      });
+    }
+
+    console.log('👤 المستخدم موجود، التحقق من كلمة المرور...');
+    
     const isMatch = await user.comparePassword(password);
+    
+    console.log('🔑 نتيجة المقارنة:', isMatch);
+    
     if (!isMatch) {
-      return res.status(401).json({ message: 'بيانات الدخول غير صحيحة' });
+      return res.status(401).json({ 
+        success: false,
+        message: 'بيانات الدخول غير صحيحة' 
+      });
     }
 
     const token = generateToken(user._id);
+    
+    console.log('✅ تم تسجيل الدخول بنجاح');
 
     res.json({
       success: true,
@@ -106,27 +146,35 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        currency: user.currency, // إرجاع العملة
+        currency: user.currency,
         subscription: user.subscription
       }
     });
+    
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في تسجيل الدخول', error: error.message });
+    console.error('❌ خطأ في تسجيل الدخول:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في تسجيل الدخول', 
+      error: error.message 
+    });
   }
 });
 
-const { protect } = require('../middleware/auth');
-
+// ==========================================
 // Update user currency
+// ==========================================
 router.patch('/update-currency', protect, async (req, res) => {
   try {
     const { currencyCode } = req.body;
     
     if (!currencyCode) {
-      return res.status(400).json({ message: 'الرجاء تحديد رمز العملة' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'الرجاء تحديد رمز العملة' 
+      });
     }
     
-    const { getCurrency } = require('../config/currencies');
     const currencyInfo = getCurrency(currencyCode);
     
     const user = await User.findByIdAndUpdate(
@@ -149,11 +197,17 @@ router.patch('/update-currency', protect, async (req, res) => {
     });
     
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في تحديث العملة', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في تحديث العملة', 
+      error: error.message 
+    });
   }
 });
 
+// ==========================================
 // Get all currencies
+// ==========================================
 router.get('/currencies', (req, res) => {
   const { getAllCurrencies } = require('../config/currencies');
   res.json({
@@ -162,7 +216,9 @@ router.get('/currencies', (req, res) => {
   });
 });
 
+// ==========================================
 // Change Password
+// ==========================================
 router.post('/change-password', protect, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;

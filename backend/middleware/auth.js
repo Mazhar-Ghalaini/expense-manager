@@ -1,45 +1,72 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// Middleware للتحقق من صحة التوكن
+const auth = async (req, res, next) => {
+    try {
+        // الحصول على التوكن من الهيدر
+        const token = req.header('Authorization')?.replace('Bearer ', '');
 
-// Protect routes
-exports.protect = async (req, res, next) => {
-  try {
-    let token;
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: 'لا يوجد توكن، الوصول مرفوض'
+            });
+        }
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
+        // التحقق من التوكن
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+
+        // البحث عن المستخدم
+        const user = await User.findById(decoded.id).select('-password');
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'المستخدم غير موجود'
+            });
+        }
+
+        // إضافة المستخدم إلى الـ request
+        req.user = user;
+        next();
+    } catch (error) {
+        console.error('Auth Error:', error);
+        res.status(401).json({
+            success: false,
+            message: 'التوكن غير صالح'
+        });
     }
-
-    if (!token) {
-      return res.status(401).json({ message: 'غير مصرح بالوصول' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = await User.findById(decoded.id);
-
-    if (!req.user) {
-      return res.status(401).json({ message: 'المستخدم غير موجود' });
-    }
-
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'رمز الدخول غير صالح' });
-  }
 };
 
-// Admin only
-exports.adminOnly = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'محظور - مسموح للمدراء فقط' });
-  }
-  next();
+// Middleware للتحقق من صلاحية الأدمن
+const adminOnly = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'يجب تسجيل الدخول أولاً'
+            });
+        }
+
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'غير مصرح لك بالوصول لهذه الصفحة'
+            });
+        }
+
+        next();
+    } catch (error) {
+        console.error('Admin Auth Error:', error);
+        res.status(403).json({
+            success: false,
+            message: 'خطأ في التحقق من الصلاحيات'
+        });
+    }
 };
 
-// Generate JWT Token
-exports.generateToken = (id) => {
-  return jwt.sign({ id }, JWT_SECRET, {
-    expiresIn: '30d'
-  });
-};
+// للتوافق مع الكود القديم
+const protect = auth;
+
+module.exports = { auth, protect, adminOnly };

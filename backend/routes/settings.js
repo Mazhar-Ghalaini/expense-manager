@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Settings = require('../models/Settings');
-const { protect, adminOnly } = require('../middleware/auth');
+const { auth ,protect, adminOnly } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 

@@ -10,7 +10,6 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  description: String,
   date: {
     type: Date,
     required: true
@@ -19,35 +18,22 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  location: String,
-  reminder: {
-    whatsapp: {
-      type: Boolean,
-      default: false
-    },
-    email: {
-      type: Boolean,
-      default: false
-    },
-    reminderTime: {
-      type: Number, // minutes before
-      default: 30
-    }
+  description: {
+    type: String
   },
-  status: {
-    type: String,
-    enum: ['pending', 'completed', 'cancelled'],
-    default: 'pending'
+  reminderEnabled: {
+    type: Boolean,
+    default: false
+  },
+  reminderEmail: {
+    type: String
   },
   addedVia: {
     type: String,
-    enum: ['manual', 'voice', 'ai-chat'],
     default: 'manual'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

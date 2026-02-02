@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
-const { protect } = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 const axios = require('axios');
 
 // ==========================================
 // Get all appointments
 // ==========================================
-router.get('/', protect, async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const appointments = await Appointment.find({ user: req.user._id }).sort('date');
     
@@ -17,33 +17,91 @@ router.get('/', protect, async (req, res) => {
       appointments
     });
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في جلب المواعيد', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في جلب المواعيد', 
+      error: error.message 
+    });
   }
 });
 
 // ==========================================
-// Add appointment
+// Add appointment مع دعم التذكيرات
 // ==========================================
-router.post('/', protect, async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
+    const { title, date, time, description, reminderEnabled, reminderEmail } = req.body;
+    
+    // إنشاء الموعد
     const appointment = await Appointment.create({
       user: req.user._id,
-      ...req.body
+      title,
+      date,
+      time,
+      description,
+      reminderEnabled: !!reminderEnabled,
+      reminderEmail: reminderEnabled ? reminderEmail : null
     });
+
+    console.log('✅ تم إنشاء موعد:', appointment._id);
+
+    // إذا كان التذكير مفعل - أنشئ التذكير
+    if (reminderEnabled && reminderEmail) {
+      try {
+        const Reminder = require('../models/Reminder');
+        
+        const newReminder = await Reminder.create({
+          user: req.user._id,
+          title: `📅 ${title}`,
+          description: description || 'تذكير بموعد',
+          date: new Date(date),
+          time: time,
+          type: 'appointment',
+          relatedId: appointment._id,
+          email: reminderEmail,
+          completed: false
+        });
+        
+        console.log('✅ تم إنشاء تذكير:', newReminder._id);
+        
+        return res.status(201).json({
+          success: true,
+          message: 'تم إضافة الموعد والتذكير بنجاح',
+          appointment,
+          reminder: newReminder
+        });
+        
+      } catch (reminderError) {
+        console.error('⚠️ خطأ في إنشاء التذكير:', reminderError);
+        
+        return res.status(201).json({
+          success: true,
+          message: 'تم إضافة الموعد لكن فشل إنشاء التذكير',
+          appointment,
+          reminderError: reminderError.message
+        });
+      }
+    }
 
     res.status(201).json({
       success: true,
+      message: 'تم إضافة الموعد بنجاح',
       appointment
     });
+    
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في إضافة الموعد', error: error.message });
+    console.error('❌ خطأ:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 });
 
 // ==========================================
 // Process AI Chat for appointment
 // ==========================================
-router.post('/ai-process', protect, async (req, res) => {
+router.post('/ai-process', auth, async (req, res) => {
   try {
     const { message } = req.body;
     
@@ -63,11 +121,16 @@ router.post('/ai-process', protect, async (req, res) => {
       });
     } else {
       res.status(400).json({ 
+        success: false,
         message: 'لم أستطع فهم الموعد. مثال: "موعد غدا الساعة 3 مساءً مع الطبيب"' 
       });
     }
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في معالجة الموعد', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في معالجة الموعد', 
+      error: error.message 
+    });
   }
 });
 
@@ -115,9 +178,9 @@ function extractAppointmentFromText(text) {
 }
 
 // ==========================================
-// Send WhatsApp reminder
+// إرسال تذكير بالبريد الإلكتروني
 // ==========================================
-router.post('/:id/remind', protect, async (req, res) => {
+router.post('/:id/email-reminder', auth, async (req, res) => {
   try {
     const appointment = await Appointment.findOne({
       _id: req.params.id,
@@ -125,10 +188,70 @@ router.post('/:id/remind', protect, async (req, res) => {
     });
 
     if (!appointment) {
-      return res.status(404).json({ message: 'الموعد غير موجود' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'الموعد غير موجود' 
+      });
     }
 
-    // WhatsApp API integration placeholder
+    if (!appointment.reminderEmail) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'لا يوجد بريد إلكتروني للتذكير' 
+      });
+    }
+
+    // حفظ سجل الإرسال في التذكيرات
+    try {
+      const Reminder = require('../models/Reminder');
+      await Reminder.create({
+        user: req.user._id,
+        title: `📧 تم إرسال تذكير: ${appointment.title}`,
+        date: new Date(),
+        time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+        type: 'appointment',
+        relatedId: appointment._id,
+        email: appointment.reminderEmail,
+        completed: true
+      });
+    } catch (err) {
+      console.error('خطأ في حفظ سجل الإرسال:', err);
+    }
+
+    // هنا يمكن إضافة كود إرسال البريد الفعلي (nodemailer)
+    // لكن حالياً نحفظ فقط في التذكيرات
+    
+    res.json({
+      success: true,
+      message: `تم حفظ طلب التذكير لـ ${appointment.reminderEmail}`
+    });
+  } catch (error) {
+    console.error('Email error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في إرسال التذكير',
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// Send WhatsApp reminder
+// ==========================================
+router.post('/:id/whatsapp', auth, async (req, res) => {
+  try {
+    const appointment = await Appointment.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'الموعد غير موجود' 
+      });
+    }
+
     const message = `🔔 تذكير: ${appointment.title}\n📅 التاريخ: ${new Date(appointment.date).toLocaleDateString('ar-SA')}\n🕐 الوقت: ${appointment.time}`;
 
     console.log('WhatsApp Reminder:', message);
@@ -138,17 +261,21 @@ router.post('/:id/remind', protect, async (req, res) => {
     
     res.json({
       success: true,
-      message: 'تم إرسال التذكير عبر واتساب'
+      message: 'سيتم إرسال التذكير عبر واتساب قريباً'
     });
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في إرسال التذكير', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في إرسال التذكير', 
+      error: error.message 
+    });
   }
 });
 
 // ==========================================
 // Update appointment status
 // ==========================================
-router.patch('/:id', protect, async (req, res) => {
+router.patch('/:id', auth, async (req, res) => {
   try {
     const appointment = await Appointment.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },
@@ -157,19 +284,29 @@ router.patch('/:id', protect, async (req, res) => {
     );
 
     if (!appointment) {
-      return res.status(404).json({ message: 'الموعد غير موجود' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'الموعد غير موجود' 
+      });
     }
 
-    res.json({ success: true, appointment });
+    res.json({ 
+      success: true, 
+      appointment 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في تحديث الموعد', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في تحديث الموعد', 
+      error: error.message 
+    });
   }
 });
 
 // ==========================================
 // Delete appointment
 // ==========================================
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const appointment = await Appointment.findOneAndDelete({
       _id: req.params.id,
@@ -177,12 +314,33 @@ router.delete('/:id', protect, async (req, res) => {
     });
 
     if (!appointment) {
-      return res.status(404).json({ message: 'الموعد غير موجود' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'الموعد غير موجود' 
+      });
     }
 
-    res.json({ success: true, message: 'تم حذف الموعد' });
+    // حذف التذكير المرتبط إن وجد
+    try {
+      const Reminder = require('../models/Reminder');
+      await Reminder.deleteMany({ 
+        relatedId: req.params.id,
+        type: 'appointment' 
+      });
+    } catch (err) {
+      console.error('خطأ في حذف التذكير:', err);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'تم حذف الموعد' 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'خطأ في حذف الموعد', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في حذف الموعد', 
+      error: error.message 
+    });
   }
 });
 

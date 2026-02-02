@@ -21,7 +21,7 @@
         /* Header */
         .header {
             background: white;
-            padding: 15px 40px;
+            padding: 15px 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
@@ -31,10 +31,59 @@
             z-index: 100;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #667eea;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        .header-left h2 {
+            font-size: 20px;
+            color: #2c3e50;
+        }
+
         .header-right {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
+        }
+
+        .currency-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .currency-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .currency-btn i {
+            color: white;
+            font-size: 16px;
+        }
+
+        .currency-btn span {
+            color: white;
+            font-weight: 600;
         }
 
         .user-info {
@@ -66,7 +115,6 @@
             justify-content: center;
             color: white;
             cursor: pointer;
-            position: relative;
         }
 
         .search-icon {
@@ -79,6 +127,7 @@
         .container {
             display: flex;
             min-height: calc(100vh - 70px);
+            position: relative;
         }
 
         /* Sidebar */
@@ -91,6 +140,7 @@
             top: 70px;
             height: calc(100vh - 70px);
             overflow-y: auto;
+            transition: transform 0.3s ease;
         }
 
         .menu-item {
@@ -130,6 +180,18 @@
         .menu-divider {
             margin: 20px 0;
             border-top: 1px solid #e0e0e0;
+        }
+
+        /* Overlay للموبايل */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 98;
         }
 
         /* Main Content */
@@ -237,34 +299,79 @@
             color: #666;
         }
 
-        /* Canvas */
         canvas {
             max-height: 300px;
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .charts-section {
-                grid-template-columns: 1fr;
-            }
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 80px;
-            }
-            
-            .menu-item span {
-                display: none;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
+        .modal.active {
+            display: flex !important;
+        }
 
-            .main-content {
-                padding: 20px;
-            }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            position: relative;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .close {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #e74c3c;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         /* Alert */
@@ -276,7 +383,7 @@
             padding: 15px 30px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
+            z-index: 10000;
             display: none;
         }
 
@@ -305,48 +412,190 @@
                 transform: translateX(-50%) translateY(0);
             }
         }
+
+        /* ==========================================
+           RESPONSIVE للموبايل
+           ========================================== */
+        @media (max-width: 768px) {
+            /* إظهار زر القائمة */
+            .menu-toggle {
+                display: block !important;
+            }
+
+            /* إخفاء اسم المستخدم على الموبايل */
+            .user-info span {
+                display: none;
+            }
+
+            /* تصغير Header */
+            .header {
+                padding: 10px 15px;
+            }
+
+            .header-left h2 {
+                font-size: 16px;
+            }
+
+            /* إخفاء زر البحث على الموبايل */
+            .search-icon {
+                display: none;
+            }
+
+            /* تصغير أيقونات Header */
+            .user-avatar,
+            .notification-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+
+            .header-right {
+                gap: 10px;
+            }
+
+            /* إخفاء Sidebar افتراضياً */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                z-index: 99;
+                transform: translateX(100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            /* تصغير المحتوى */
+            .main-content {
+                padding: 20px 15px;
+            }
+
+            .welcome-section h1 {
+                font-size: 24px;
+            }
+
+            .welcome-section {
+                margin-bottom: 25px;
+            }
+
+            /* Stats Cards */
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-card .number {
+                font-size: 36px;
+            }
+
+            .stat-card h3 {
+                font-size: 14px;
+            }
+
+            /* Charts */
+            .charts-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .chart-card {
+                padding: 20px;
+            }
+
+            .chart-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .chart-header h2 {
+                font-size: 18px;
+            }
+
+            canvas {
+                max-height: 250px;
+            }
+
+            /* Currency Button */
+            .currency-btn {
+                padding: 8px 12px;
+            }
+
+            .currency-btn span {
+                font-size: 14px;
+            }
+
+            .currency-btn i {
+                font-size: 14px;
+            }
+        }
+
+        /* للشاشات الصغيرة جداً */
+        @media (max-width: 480px) {
+            .header-left h2 {
+                display: none;
+            }
+
+            .stat-card .number {
+                font-size: 28px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Alert -->
     <div id="alertBox" class="alert"></div>
 
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <!-- Header -->
     <div class="header">
-<div onclick="showCurrencyModal()" style="
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 10px 20px;
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    transition: all 0.3s;
-">
-    <i class="fas fa-exchange-alt" style="color: white; font-size: 16px;"></i>
-    <span id="currentCurrency" style="color: white; font-weight: 600;">SAR</span>
-</div>        
-<div class="header-right">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>قائمة العمليات</h2>
+        </div>
+        
+        <div class="header-right">
+            <button class="currency-btn" onclick="showCurrencyModal()">
+                <i class="fas fa-exchange-alt"></i>
+                <span id="currentCurrency">SAR</span>
+            </button>
+            
+            <div class="search-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <div class="notification-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            
             <div class="user-info">
                 <span id="userName">User name</span>
                 <div class="user-avatar" id="userAvatar">A</div>
             </div>
-            <div class="notification-icon">
-                <i class="fas fa-bell"></i>
-            </div>
-            <div class="search-icon">
-                <i class="fas fa-search"></i>
-            </div>
-        </div>
-        <div class="header-left">
-            <h2>قائمة العمليات</h2>
         </div>
     </div>
 
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <button class="menu-item active" data-page="app">
                 <div class="icon"><i class="fas fa-th-large"></i></div>
                 <span>نظرة عامة</span>
@@ -441,10 +690,51 @@
         </div>
     </div>
 
+    <!-- Currency Modal -->
+    <div id="currencyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCurrencyModal()">&times;</span>
+            <h2><i class="fas fa-money-bill-wave"></i> تغيير العملة</h2>
+            <form onsubmit="updateCurrency(event)">
+                <div class="form-group">
+                    <label>اختر العملة الجديدة</label>
+                    <select id="newCurrency" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        <optgroup label="دول الخليج">
+                            <option value="SAR">🇸🇦 ريال سعودي (SAR)</option>
+                            <option value="AED">🇦🇪 درهم إماراتي (AED)</option>
+                            <option value="KWD">🇰🇼 دينار كويتي (KWD)</option>
+                            <option value="BHD">🇧🇭 دينار بحريني (BHD)</option>
+                            <option value="OMR">🇴🇲 ريال عماني (OMR)</option>
+                            <option value="QAR">🇶🇦 ريال قطري (QAR)</option>
+                        </optgroup>
+                        <optgroup label="دول عربية">
+                            <option value="EGP">🇪🇬 جنيه مصري (EGP)</option>
+                            <option value="JOD">🇯🇴 دينار أردني (JOD)</option>
+                            <option value="USD">🇺🇸 دولار أمريكي (USD)</option>
+                            <option value="EUR">🇪🇺 يورو (EUR)</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-check"></i> تحديث العملة
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/app.js"></script>
     <script>
+        // Toggle Sidebar للموبايل
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
         // التنقل بين الصفحات
         document.addEventListener('DOMContentLoaded', function() {
             const menuItems = document.querySelectorAll('.menu-item[data-page]');
@@ -453,12 +743,14 @@
                 item.addEventListener('click', function() {
                     const page = this.getAttribute('data-page');
                     
-                    // إزالة active من جميع العناصر
                     menuItems.forEach(i => i.classList.remove('active'));
-                    // إضافة active للعنصر المضغوط
                     this.classList.add('active');
                     
-                    // التنقل حسب الصفحة
+                    // إغلاق Sidebar على الموبايل
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar();
+                    }
+                    
                     switch(page) {
                         case 'app':
                             window.location.href = 'app.html';
@@ -482,7 +774,6 @@
                 });
             });
 
-            // تسجيل الخروج
             document.getElementById('logoutBtn').addEventListener('click', function() {
                 if(confirm('هل تريد تسجيل الخروج؟')) {
                     localStorage.removeItem('token');
@@ -491,91 +782,16 @@
                 }
             });
 
-            // تحديث رمز العملة
             updateCurrencyDisplay();
         });
+
+        function showCurrencyModal() {
+            document.getElementById('currencyModal').classList.add('active');
+        }
+
+        function closeCurrencyModal() {
+            document.getElementById('currencyModal').classList.remove('active');
+        }
     </script>
-<!-- Currency Modal -->
-<div id="currencyModal" class="modal">
-    <div class="modal-content" style="max-width: 400px;">
-        <span class="close" onclick="closeCurrencyModal()">&times;</span>
-        <h2><i class="fas fa-money-bill-wave"></i> تغيير العملة</h2>
-        <form onsubmit="updateCurrency(event)">
-            <div class="form-group">
-                <label>اختر العملة الجديدة</label>
-                <select id="newCurrency" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                    <optgroup label="دول الخليج">
-                        <option value="SAR">🇸🇦 ريال سعودي (SAR)</option>
-                        <option value="AED">🇦🇪 درهم إماراتي (AED)</option>
-                        <option value="KWD">🇰🇼 دينار كويتي (KWD)</option>
-                        <option value="BHD">🇧🇭 دينار بحريني (BHD)</option>
-                        <option value="OMR">🇴🇲 ريال عماني (OMR)</option>
-                        <option value="QAR">🇶🇦 ريال قطري (QAR)</option>
-                    </optgroup>
-                    <optgroup label="دول عربية">
-                        <option value="EGP">🇪🇬 جنيه مصري (EGP)</option>
-                        <option value="JOD">🇯🇴 دينار أردني (JOD)</option>
-                        <option value="USD">🇺🇸 دولار أمريكي (USD)</option>
-                        <option value="EUR">🇪🇺 يورو (EUR)</option>
-                    </optgroup>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
-                <i class="fas fa-check"></i> تحديث العملة
-            </button>
-        </form>
-    </div>
-</div>
-
-<style>
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    justify-content: center;
-    align-items: center;
-}
-
-.modal.active {
-    display: flex !important;
-}
-
-.modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    position: relative;
-}
-
-.close {
-    position: absolute;
-    left: 15px;
-    top: 15px;
-    font-size: 28px;
-    cursor: pointer;
-    color: #999;
-}
-
-.close:hover {
-    color: #e74c3c;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #2c3e50;
-}
-</style>
 </body>
 </html>

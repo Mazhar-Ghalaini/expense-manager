@@ -108,21 +108,25 @@ html, body {
    Hero Section
 ========================================== */
 .hero {
-    padding: 4rem 0;
+    padding: 80px 0;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    overflow: hidden;
 }
 
 .hero .container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3rem;
-    align-items: center;
+    display: block;
+    max-width: 1200px;
+    text-align: center;
+}
+
+.hero-content {
+    margin-bottom: 40px;
 }
 
 .hero-title {
     font-size: 3rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     line-height: 1.2;
 }
 
@@ -130,35 +134,47 @@ html, body {
     font-size: 1.2rem;
     margin-bottom: 2rem;
     opacity: 0.95;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .hero-buttons {
     display: flex;
     gap: 1rem;
+    justify-content: center;
     flex-wrap: wrap;
 }
 
+.hero-image {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
 .hero-image img {
+    max-width: 500px;
     width: 100%;
-    border-radius: var(--border-radius);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 /* ==========================================
    Buttons
 ========================================== */
 .btn {
-    padding: 0.8rem 1.5rem;
+    padding: 12px 24px;
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: 10px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     text-decoration: none;
+    border: 2px solid transparent;
 }
 
 .btn i {
@@ -166,23 +182,24 @@ html, body {
 }
 
 .btn-primary {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
 .btn-primary:hover {
-    background: #357abd;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
 .btn-secondary {
     background: white;
-    color: var(--primary-color);
+    color: #667eea;
+    border-color: #667eea;
 }
 
 .btn-secondary:hover {
-    background: var(--light-color);
+    background: #667eea;
+    color: white;
 }
 
 .btn-success {
@@ -205,8 +222,13 @@ html, body {
     cursor: not-allowed;
 }
 
-.btn .fa-spinner {
-    animation: spin 1s linear infinite;
+.btn-block {
+    width: 100%;
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 14px;
 }
 
 @keyframes spin {
@@ -287,7 +309,7 @@ html, body {
     min-height: 100vh;
     background: #f5f6fa;
     direction: rtl;
-    max-width: calc(100vw - 260px);
+    max-width: 100%;
     overflow-x: hidden;
 }
 
@@ -707,11 +729,13 @@ html, body {
    Features Section
 ========================================== */
 .features {
-    padding: 4rem 0;
+    padding: 80px 0;
+    background: #f8f9fa;
 }
 
+
 .section-title {
-    text-align: center;
+    text-align: right;
     font-size: 2.5rem;
     margin-bottom: 3rem;
     color: var(--dark-color);
@@ -719,22 +743,24 @@ html, body {
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .feature-card {
     background: white;
-    padding: 2rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    padding: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     text-align: center;
-    transition: var(--transition);
+    transition: all 0.3s;
 }
 
 .feature-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
 }
 
 .feature-icon {
@@ -753,6 +779,7 @@ html, body {
 .feature-card h3 {
     margin-bottom: 1rem;
     color: var(--dark-color);
+    font-size: 1.3rem;
 }
 
 .feature-card p {
@@ -1253,4 +1280,142 @@ html, body {
     .charts-section {
         grid-template-columns: 1fr !important;
     }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.form-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.form-header h2 {
+    margin: 0;
+    text-align: center;
+}
+
+#recordingIndicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #ffebee;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .form-header {
+        width: 100%;
+    }
+    
+    #voiceBtn {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* ==========================================
+   إصلاح العرض الزائد
+========================================== */
+body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+html {
+    overflow-x: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* CTA Section */
+.cta {
+    padding: 80px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+}
+
+.cta h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.cta p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.95;
+}
+
+/* Footer */
+.footer {
+    background: var(--dark-color);
+    color: white;
+    padding: 3rem 0 1rem;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.footer-section h4 {
+    margin-bottom: 1rem;
+    color: #667eea;
+}
+
+.footer-section ul {
+    list-style: none;
+}
+
+.footer-section ul li {
+    margin-bottom: 0.5rem;
+}
+
+.footer-section a {
+    color: #bbb;
+    text-decoration: none;
+}
+
+.footer-section a:hover {
+    color: white;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-links a {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-links a:hover {
+    background: #667eea;
 }

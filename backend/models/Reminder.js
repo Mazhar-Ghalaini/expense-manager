@@ -22,6 +22,17 @@ const reminderSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  timezone: {
+    type: String,
+    default: 'Europe/Berlin'
+  },
+  reminderEnabled: {
+    type: Boolean,
+    default: false
+  },
+  reminderEmail: {
+    type: String
+  },
   type: {
     type: String,
     enum: ['appointment', 'custom'],

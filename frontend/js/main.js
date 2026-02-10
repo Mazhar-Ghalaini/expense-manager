@@ -76,7 +76,6 @@ async function handleLogin(event) {
         console.log('📥 استجابة تسجيل الدخول:', data);
         
         if (data.success && data.token) {
-            // ✅ الإصلاح: حفظ التوكن والمستخدم بشكل صحيح
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             
@@ -119,7 +118,6 @@ async function handleRegister(event) {
     
     console.log('📝 محاولة التسجيل:', { name, email, phone, currencyCode });
     
-    // التحقق من البيانات
     if (name.length < 3) {
         showAlert('الاسم يجب أن يكون 3 أحرف على الأقل', 'danger');
         return;
@@ -177,7 +175,6 @@ async function handleRegister(event) {
         console.log('📥 استجابة التسجيل:', data);
         
         if (data.success && data.token) {
-            // ✅ الإصلاح: حفظ التوكن والمستخدم بشكل صحيح
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             
@@ -456,6 +453,8 @@ function applyColors(colors) {
     console.log('🎨 تم تطبيق الألوان المخصصة');
 }
 
+
+
 // ==========================================
 // Event Listeners
 // ==========================================
@@ -464,15 +463,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadSiteSettings();
     
-    const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    if (hamburger && navMenu) {
-        hamburger.addEventListener('click', function() {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
-    }
+    // ✅ تم إزالة الكود المتعارض مع toggleMobileMenu()
+    // القائمة الآن تُدار بالكامل من index.html
     
     window.addEventListener('click', function(event) {
         if (event.target.classList.contains('modal')) {
@@ -501,18 +493,21 @@ document.addEventListener('DOMContentLoaded', function() {
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
+        // ✅ إذا الرابط # فقط أو #! → لا تعمل شيء
+        if (href === '#' || href === '#!') return;
         
-        if (href !== '#' && href !== '#!') {
+        // ✅ تحقق إذا العنصر موجود في الصفحة الحالية
+        const target = document.querySelector(href);
+        
+        // ✅ فقط إذا العنصر موجود → امنع السلوك الافتراضي واعمل smooth scroll
+        if (target) {
             e.preventDefault();
-            const target = document.querySelector(href);
-            
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         }
+        // إذا العنصر مو موجود → الرابط يفتح عادي (مثل index.html#features)
     });
 });
 

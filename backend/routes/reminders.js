@@ -25,7 +25,7 @@ router.get('/', auth, async (req, res) => {
         
         const reminders = await Reminder.find(query)
             .sort({ date: 1, time: 1 })
-            .populate('relatedId', 'title'); // لجلب عنوان الموعد المرتبط
+            .populate('relatedId', 'title');
         
         res.json({
             success: true,
@@ -47,9 +47,22 @@ router.get('/', auth, async (req, res) => {
 // ==========================================
 router.post('/', auth, async (req, res) => {
     try {
-        const { title, description, date, time, sendEmail, sendWhatsapp, email, whatsapp, priority } = req.body;
+        const { 
+            title, 
+            description, 
+            date, 
+            time, 
+            timezone, 
+            reminderEnabled, 
+            reminderEmail,
+            sendEmail, 
+            sendWhatsapp, 
+            email, 
+            whatsapp, 
+            priority 
+        } = req.body;
         
-        // التحقق من البيانات
+        // التحقق من البيانات الأساسية
         if (!title || !date || !time) {
             return res.status(400).json({
                 success: false,
@@ -57,12 +70,16 @@ router.post('/', auth, async (req, res) => {
             });
         }
         
-        if (sendEmail && !email) {
+        // التحقق من البريد إذا كان التذكير مفعّلاً
+        if (reminderEnabled && !reminderEmail) {
             return res.status(400).json({
                 success: false,
-                message: 'البريد الإلكتروني مطلوب لإرسال التذكير'
+                message: 'البريد الإلكتروني مطلوب عند تفعيل التذكير'
             });
         }
+        
+        // التوافق مع الكود القديم
+        const finalEmail = reminderEmail || (sendEmail ? email : null);
         
         const newReminder = await Reminder.create({
             user: req.user._id,
@@ -70,8 +87,11 @@ router.post('/', auth, async (req, res) => {
             description,
             date,
             time,
+            timezone: timezone || 'Europe/Berlin',
+            reminderEnabled: reminderEnabled || false,
+            reminderEmail: finalEmail,
             type: 'custom',
-            email: sendEmail ? email : null,
+            email: finalEmail, // للتوافق مع الكود القديم
             completed: false
         });
         
@@ -107,13 +127,16 @@ router.put('/:id', auth, async (req, res) => {
             });
         }
         
-        const { title, description, date, time, email } = req.body;
+        const { title, description, date, time, timezone, reminderEnabled, reminderEmail, email } = req.body;
         
         reminder.title = title || reminder.title;
         reminder.description = description !== undefined ? description : reminder.description;
         reminder.date = date || reminder.date;
         reminder.time = time || reminder.time;
-        reminder.email = email !== undefined ? email : reminder.email;
+        reminder.timezone = timezone || reminder.timezone;
+        reminder.reminderEnabled = reminderEnabled !== undefined ? reminderEnabled : reminder.reminderEnabled;
+        reminder.reminderEmail = reminderEmail !== undefined ? reminderEmail : reminder.reminderEmail;
+        reminder.email = reminderEmail !== undefined ? reminderEmail : (email !== undefined ? email : reminder.email);
         
         await reminder.save();
         
@@ -180,7 +203,7 @@ router.patch('/:id/complete', auth, async (req, res) => {
             });
         }
         
-        reminder.completed = !reminder.completed; // Toggle
+        reminder.completed = !reminder.completed;
         await reminder.save();
         
         res.json({
@@ -215,37 +238,38 @@ router.post('/:id/send', auth, async (req, res) => {
             });
         }
         
-        if (!reminder.email) {
+        const emailToSend = reminder.reminderEmail || reminder.email;
+        
+        if (!emailToSend) {
             return res.status(400).json({
                 success: false,
                 message: 'لا يوجد بريد إلكتروني لهذا التذكير'
             });
         }
         
-        // إرسال الإيميل (يمكن إضافة nodemailer لاحقاً)
-        console.log('📧 إرسال تذكير إلى:', reminder.email);
+        console.log('📧 إرسال تذكير إلى:', emailToSend);
         console.log('📝 العنوان:', reminder.title);
         console.log('📅 التاريخ:', reminder.date);
         console.log('🕐 الوقت:', reminder.time);
+        console.log('🌍 المنطقة الزمنية:', reminder.timezone || 'Europe/Berlin');
         
-        // حفظ سجل الإرسال
         reminder.completed = true;
         await reminder.save();
         
-        // إنشاء تذكير جديد بأنه تم الإرسال
         await Reminder.create({
             user: req.user._id,
             title: `✅ تم إرسال: ${reminder.title}`,
-            description: `تم إرسال التذكير إلى ${reminder.email}`,
+            description: `تم إرسال التذكير إلى ${emailToSend}`,
             date: new Date(),
             time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+            timezone: reminder.timezone || 'Europe/Berlin',
             type: 'custom',
             completed: true
         });
         
         res.json({
             success: true,
-            message: `تم إرسال التذكير إلى ${reminder.email}`,
+            message: `تم إرسال التذكير إلى ${emailToSend}`,
             reminder
         });
     } catch (error) {

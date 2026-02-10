@@ -7,6 +7,25 @@ let currentDate = new Date();
 let selectedDate = null;
 let appointments = [];
 
+// تعبئة قائمة المناطق الزمنية تلقائيًا
+document.addEventListener('DOMContentLoaded', () => {
+    const timezoneSelect = document.getElementById('timezone');
+    if (!timezoneSelect) return;
+
+    const timezones = Intl.supportedValuesOf('timeZone'); // كل المناطق الزمنية المدعومة
+    timezones.forEach(tz => {
+        const option = document.createElement('option');
+        option.value = tz;
+        option.textContent = tz;
+        timezoneSelect.appendChild(option);
+    });
+
+    // اختيار المنطقة الزمنية تلقائيًا حسب متصفح المستخدم
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    timezoneSelect.value = userTimezone;
+});
+
+
 // الأشهر بالعربي
 const arabicMonths = [
     'يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو',
@@ -287,6 +306,10 @@ document.getElementById('appointmentForm')?.addEventListener('submit', async fun
         location: document.getElementById('location').value,
         whatsapp: document.getElementById('whatsapp').value,
         notes: document.getElementById('notes').value
+        reminderEnabled: document.getElementById('reminderEnabled')?.checked || false,
+        reminderEmail: document.getElementById('reminderEmail')?.value || null,
+        timezone: document.getElementById('timezone')?.value || 'Europe/Berlin'  // ← أضف هذا
+
     };
     
     try {

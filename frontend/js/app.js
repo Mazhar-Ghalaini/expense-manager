@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = 'reminders.html';
             } 
             else if (text.includes('ذكاء') || text.includes('AI')) {
-                window.location.href = 'ai-assistant.html';
+                window.location.href = 'ai.html';
             } 
             else if (text.includes('إعدادات') || text.includes('Settings')) {
                 window.location.href = 'settings.html';
@@ -478,3 +478,5 @@ function showCurrencyModal() {
     }
     document.getElementById('currencyModal').classList.add('active');
 }
+
+

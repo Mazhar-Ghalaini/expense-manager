@@ -28,6 +28,10 @@ const appointmentSchema = new mongoose.Schema({
   reminderEmail: {
     type: String
   },
+  timezone: {
+    type: String,
+    default: 'Europe/Berlin'
+  },
   addedVia: {
     type: String,
     default: 'manual'

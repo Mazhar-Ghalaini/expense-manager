@@ -62,7 +62,7 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Export Excel - تحميل مباشر
+// Export Excel - تحميل مباشر (للاستخدام من صفحة المصروفات)
 router.get('/export-excel', auth, async (req, res) => {
   try {
     const expenses = await Expense.find({ user: req.user._id }).sort('-date');
@@ -103,6 +103,61 @@ router.get('/export-excel', auth, async (req, res) => {
     res.send(buffer);
 
   } catch (error) {
+    res.status(500).json({ success: false, message: 'خطأ في تصدير الملف' });
+  }
+});
+
+// Export Excel - للاستخدام من AI (نفس الوظيفة مع route مختلف)
+router.get('/export', auth, async (req, res) => {
+  try {
+    const expenses = await Expense.find({ user: req.user._id }).sort('-date');
+
+    if (expenses.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'لا توجد مصروفات لتصديرها' 
+      });
+    }
+
+    const wb = XLSX.utils.book_new();
+    const wsData = [
+      ['التاريخ', 'المبلغ', 'الفئة', 'الوصف']
+    ];
+
+    expenses.forEach(exp => {
+      wsData.push([
+        new Date(exp.date).toLocaleDateString('ar-SA'),
+        `${exp.amount} يورو`,
+        exp.category,
+        exp.description || '-'
+      ]);
+    });
+
+    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    wsData.push([]);
+    wsData.push(['المجموع الكلي:', `${total} يورو`]);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // تنسيق عرض الأعمدة
+    ws['!cols'] = [
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 30 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'المصروفات');
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const filename = `expenses_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('خطأ في تصدير Excel:', error);
     res.status(500).json({ success: false, message: 'خطأ في تصدير الملف' });
   }
 });

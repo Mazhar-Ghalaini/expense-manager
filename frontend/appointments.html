@@ -374,7 +374,7 @@
                 <div class="icon"><i class="fas fa-bell"></i></div>
                 <span>تذكيرات</span>
             </a>
-            <a href="ai-assistant.html" class="menu-item">
+            <a href="ai.html" class="menu-item">
                 <div class="icon"><i class="fas fa-robot"></i></div>
                 <span>الذكاء الاصطناعي</span>
             </a>
@@ -391,17 +391,21 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="page-header">
-                <h1>إدارة المواعيد</h1>
-            </div>
+    <h1>إدارة المواعيد</h1>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+        <button class="btn btn-success" onclick="toggleVoiceAppointment()" id="voiceBtn">
+            <i class="fas fa-microphone"></i>
+            <span>اضافة موعد من خلال تسجيل صوتي</span>
+        </button>
+        <div id="recordingIndicator" style="display: none; color: #f44336; font-weight: 600; font-size: 14px; animation: pulse 1.5s infinite;">
+            <i class="fas fa-circle" style="font-size: 8px; margin-left: 8px;"></i>
+            جاري التسجيل... <span id="recordingTimer">0</span>ث
+        </div>
+    </div>
+</div>
 
-            <div class="form-card">
-                <div class="form-header">
-                    <h2>إضافة موعد جديد</h2>
-                    <button class="btn btn-success" onclick="toggleVoiceAppointment()" id="voiceBtn">
-                        <i class="fas fa-microphone"></i>
-                        تسجيل صوتي
-                    </button>
-                </div>
+<div class="form-card">
+    <h2 style="text-align: center; margin-bottom: 25px;">إضافة موعد جديد</h2>
                 
                 <form id="appointmentForm">
                     <div class="form-row">
@@ -420,6 +424,82 @@
                             <label>الوقت *</label>
                             <input type="time" id="time" required>
                         </div>
+                   <div class="form-group">
+    <label for="timezone">
+        <i class="fas fa-globe"></i>
+        المنطقة الزمنية
+    </label>
+    <select id="timezone" name="timezone" class="form-control">
+        <optgroup label="أفريقيا">
+            <option value="Africa/Cairo">القاهرة (GMT+2)</option>
+            <option value="Africa/Casablanca">الدار البيضاء (GMT+1)</option>
+            <option value="Africa/Johannesburg">جوهانسبرغ (GMT+2)</option>
+            <option value="Africa/Lagos">لاغوس (GMT+1)</option>
+            <option value="Africa/Nairobi">نيروبي (GMT+3)</option>
+        </optgroup>
+        
+        <optgroup label="آسيا">
+            <option value="Asia/Riyadh">الرياض (GMT+3)</option>
+            <option value="Asia/Dubai">دبي (GMT+4)</option>
+            <option value="Asia/Kuwait">الكويت (GMT+3)</option>
+            <option value="Asia/Bahrain">البحرين (GMT+3)</option>
+            <option value="Asia/Qatar">قطر (GMT+3)</option>
+            <option value="Asia/Muscat">مسقط (GMT+4)</option>
+            <option value="Asia/Baghdad">بغداد (GMT+3)</option>
+            <option value="Asia/Damascus">دمشق (GMT+2)</option>
+            <option value="Asia/Beirut">بيروت (GMT+2)</option>
+            <option value="Asia/Amman">عمّان (GMT+2)</option>
+            <option value="Asia/Jerusalem">القدس (GMT+2)</option>
+            <option value="Asia/Tehran">طهران (GMT+3:30)</option>
+            <option value="Asia/Karachi">كراتشي (GMT+5)</option>
+            <option value="Asia/Kolkata">نيودلهي (GMT+5:30)</option>
+            <option value="Asia/Dhaka">دكا (GMT+6)</option>
+            <option value="Asia/Bangkok">بانكوك (GMT+7)</option>
+            <option value="Asia/Singapore">سنغافورة (GMT+8)</option>
+            <option value="Asia/Hong_Kong">هونغ كونغ (GMT+8)</option>
+            <option value="Asia/Shanghai">شنغهاي (GMT+8)</option>
+            <option value="Asia/Tokyo">طوكيو (GMT+9)</option>
+            <option value="Asia/Seoul">سيول (GMT+9)</option>
+        </optgroup>
+        
+        <optgroup label="أوروبا">
+            <option value="Europe/Berlin" selected>برلين (GMT+1)</option>
+            <option value="Europe/London">لندن (GMT+0)</option>
+            <option value="Europe/Paris">باريس (GMT+1)</option>
+            <option value="Europe/Rome">روما (GMT+1)</option>
+            <option value="Europe/Madrid">مدريد (GMT+1)</option>
+            <option value="Europe/Amsterdam">أمستردام (GMT+1)</option>
+            <option value="Europe/Brussels">بروكسل (GMT+1)</option>
+            <option value="Europe/Vienna">فيينا (GMT+1)</option>
+            <option value="Europe/Stockholm">ستوكهولم (GMT+1)</option>
+            <option value="Europe/Moscow">موسكو (GMT+3)</option>
+            <option value="Europe/Istanbul">إسطنبول (GMT+3)</option>
+        </optgroup>
+        
+        <optgroup label="أمريكا الشمالية">
+            <option value="America/New_York">نيويورك (GMT-5)</option>
+            <option value="America/Chicago">شيكاغو (GMT-6)</option>
+            <option value="America/Denver">دنفر (GMT-7)</option>
+            <option value="America/Los_Angeles">لوس أنجلوس (GMT-8)</option>
+            <option value="America/Toronto">تورنتو (GMT-5)</option>
+            <option value="America/Vancouver">فانكوفر (GMT-8)</option>
+            <option value="America/Mexico_City">مكسيكو سيتي (GMT-6)</option>
+        </optgroup>
+        
+        <optgroup label="أمريكا الجنوبية">
+            <option value="America/Sao_Paulo">ساو باولو (GMT-3)</option>
+            <option value="America/Buenos_Aires">بوينس آيرس (GMT-3)</option>
+            <option value="America/Bogota">بوغوتا (GMT-5)</option>
+            <option value="America/Lima">ليما (GMT-5)</option>
+        </optgroup>
+        
+        <optgroup label="أوقيانوسيا">
+            <option value="Australia/Sydney">سيدني (GMT+11)</option>
+            <option value="Australia/Melbourne">ملبورن (GMT+11)</option>
+            <option value="Pacific/Auckland">أوكلاند (GMT+13)</option>
+        </optgroup>
+    </select>
+</div>
                         <div class="form-group">
                             <label>
                                 <input type="checkbox" id="enableReminder" onchange="toggleReminderEmail()" style="width: auto; margin-left: 8px;">
@@ -459,69 +539,270 @@
     </div>
 
     <script src="js/app.js"></script>
-    <script>
-        let recognition;
-        let isRecording = false;
+<script>
+    // متغيرات التسجيل الصوتي
+    let recognition = null;
+    let isRecording = false;
+    let recordingTimeout = null;
+    let timerInterval = null;
+    let recordingSeconds = 0;
 
-        // Toggle Sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            if (sidebar) sidebar.classList.toggle('active');
-            if (overlay) overlay.classList.toggle('active');
-        }
+    // Toggle Sidebar
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebar) sidebar.classList.toggle('active');
+        if (overlay) overlay.classList.toggle('active');
+    }
 
-        // إغلاق القائمة عند اختيار صفحة
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuItems = document.querySelectorAll('.menu-item');
-            
-            menuItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    if (window.innerWidth <= 768) {
-                        toggleSidebar();
-                    }
-                });
+    // إغلاق القائمة عند اختيار صفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuItems = document.querySelectorAll('.menu-item');
+        
+        menuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
             });
-
-            loadAppointments();
         });
 
-        // Logout
-        function logout() {
-            if (confirm('هل تريد تسجيل الخروج؟')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = 'index.html';
-            }
-        }
+        loadAppointments();
+    });
 
-        function toggleReminderEmail() {
-            const checkbox = document.getElementById('enableReminder');
-            const emailField = document.getElementById('emailField');
-            const emailInput = document.getElementById('reminderEmail');
+    // Logout
+    function logout() {
+        if (confirm('هل تريد تسجيل الخروج؟')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+    }
+
+    // تبديل حقل البريد الإلكتروني
+    function toggleReminderEmail() {
+        const checkbox = document.getElementById('enableReminder');
+        const emailField = document.getElementById('emailField');
+        const emailInput = document.getElementById('reminderEmail');
+        
+        if (checkbox.checked) {
+            emailField.style.display = 'block';
+            emailInput.required = true;
+        } else {
+            emailField.style.display = 'none';
+            emailInput.required = false;
+            emailInput.value = '';
+        }
+    }
+
+    // إضافة موعد
+document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const enableReminder = document.getElementById('enableReminder').checked;
+    const appointmentData = {
+        title: document.getElementById('title').value,
+        date: document.getElementById('date').value,
+        time: document.getElementById('time').value,
+        description: document.getElementById('description').value,
+        reminderEnabled: enableReminder,
+        reminderEmail: enableReminder ? document.getElementById('reminderEmail').value : null,
+        timezone: document.getElementById('timezone').value || 'Europe/Berlin'
+    };
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/appointments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(appointmentData)
+            });
             
-            if (checkbox.checked) {
-                emailField.style.display = 'block';
-                emailInput.required = true;
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ تم إضافة الموعد بنجاح!');
+                this.reset();
+                document.getElementById('enableReminder').checked = false;
+                toggleReminderEmail();
+                await loadAppointments();
             } else {
-                emailField.style.display = 'none';
-                emailInput.required = false;
-                emailInput.value = '';
+                alert('❌ ' + (data.message || 'خطأ في إضافة الموعد'));
             }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ خطأ في إضافة الموعد');
         }
+    });
 
-        document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+    // تحميل المواعيد
+    async function loadAppointments() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/appointments`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             
-            const enableReminder = document.getElementById('enableReminder').checked;
+            const data = await response.json();
+            if (data.success) displayAppointments(data.appointments);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // عرض المواعيد
+    function displayAppointments(appointments) {
+        const container = document.getElementById('appointmentsList');
+        
+        if (!appointments || appointments.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-times"></i><p>لا توجد مواعيد</p></div>';
+            return;
+        }
+        
+        const html = appointments.map(apt => `
+            <div class="appointment-item">
+                <div class="appointment-info">
+                    <h3>${apt.title}</h3>
+                    <div class="appointment-date">
+                        <i class="fas fa-calendar"></i> ${new Date(apt.date).toLocaleDateString('ar-SA')}
+                        <i class="fas fa-clock" style="margin-right: 15px;"></i> ${apt.time}
+                        ${apt.reminderEnabled ? '<i class="fas fa-envelope" style="margin-right: 15px; color: #4caf50;"></i>' : ''}
+                    </div>
+                    ${apt.description ? `<p style="margin-top: 5px; color: #666;">${apt.description}</p>` : ''}
+                </div>
+                <div class="appointment-actions">
+                    ${apt.reminderEnabled && apt.reminderEmail ? `
+                        <button class="btn btn-success btn-sm" onclick="sendEmailReminder('${apt._id}')">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-danger btn-sm" onclick="deleteAppointment('${apt._id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = html;
+    }
+
+    // حذف موعد
+    async function deleteAppointment(id) {
+        if (!confirm('هل تريد حذف هذا الموعد؟')) return;
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/appointments/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if ((await response.json()).success) {
+                alert('✅ تم الحذف');
+                loadAppointments();
+            }
+        } catch (error) {
+            alert('❌ خطأ في الحذف');
+        }
+    }
+
+    // إرسال تذكير بالبريد
+    async function sendEmailReminder(id) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/appointments/${id}/email-reminder`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            const data = await response.json();
+            alert(data.success ? '✅ تم إرسال التذكير' : '❌ ' + data.message);
+        } catch (error) {
+            alert('❌ خطأ في إرسال التذكير');
+        }
+    }
+
+    // ==========================================
+    // التسجيل الصوتي
+    // ==========================================
+    function toggleVoiceAppointment() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('❌ المتصفح لا يدعم التسجيل الصوتي\nاستخدم Chrome أو Edge');
+            return;
+        }
+        
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    }
+
+    function startRecording() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ar-SA';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        recognition.onstart = () => {
+            isRecording = true;
+            recordingSeconds = 0;
+            
+            // تحديث الزر
+            const btn = document.getElementById('voiceBtn');
+            btn.style.background = '#f44336';
+            btn.innerHTML = '<i class="fas fa-stop"></i> <span>إيقاف التسجيل</span>';
+            
+            // إظهار مؤشر التسجيل
+            const indicator = document.getElementById('recordingIndicator');
+            if (indicator) {
+                indicator.style.display = 'flex';
+            }
+            
+            // بدء العداد
+            timerInterval = setInterval(() => {
+                recordingSeconds++;
+                const timerEl = document.getElementById('recordingTimer');
+                if (timerEl) timerEl.textContent = recordingSeconds;
+            }, 1000);
+            
+            // إيقاف تلقائي بعد 15 ثانية
+            recordingTimeout = setTimeout(() => {
+                console.log('⏱️ انتهى وقت التسجيل (15 ثانية)');
+                stopRecording();
+                alert('⏱️ تم إيقاف التسجيل تلقائياً بعد 15 ثانية');
+            }, 15000);
+            
+            console.log('🎤 بدء التسجيل...');
+        };
+        
+        recognition.onresult = async (event) => {
+            const text = event.results[0][0].transcript;
+            console.log('✅ تم التعرف على:', text);
+            
+            // إيقاف التسجيل
+            stopRecording();
+            
+            // ملء حقل العنوان
+            document.getElementById('title').value = text;
+            
+            // تحضير البيانات
+            const today = new Date().toISOString().split('T')[0];
+            const now = new Date().toTimeString().split(' ')[0].substring(0, 5);
+            
             const appointmentData = {
-                title: document.getElementById('title').value,
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                description: document.getElementById('description').value,
-                reminderEnabled: enableReminder,
-                reminderEmail: enableReminder ? document.getElementById('reminderEmail').value : null
+                title: text,
+                date: document.getElementById('date').value || today,
+                time: document.getElementById('time').value || now,
+                description: 'تم الإضافة بالصوت',
+                           reminderEnabled: false,
+                timezone: document.getElementById('timezone').value || 'Europe/Berlin'
+
             };
             
             try {
@@ -538,193 +819,94 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('✅ تم إضافة الموعد بنجاح!');
-                    this.reset();
-                    document.getElementById('enableReminder').checked = false;
-                    toggleReminderEmail();
+                    alert('✅ تم إضافة الموعد: ' + text);
+                    document.getElementById('appointmentForm').reset();
                     await loadAppointments();
                 } else {
-                    alert('❌ ' + (data.message || 'خطأ في إضافة الموعد'));
+                    alert('❌ خطأ: ' + data.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ خطأ في إضافة الموعد');
             }
-        });
-
-        async function loadAppointments() {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_URL}/appointments`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                const data = await response.json();
-                if (data.success) displayAppointments(data.appointments);
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-
-        function displayAppointments(appointments) {
-            const container = document.getElementById('appointmentsList');
+        };
+        
+        recognition.onerror = (event) => {
+            console.error('❌ خطأ في التسجيل:', event.error);
             
-            if (!appointments || appointments.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-times"></i><p>لا توجد مواعيد</p></div>';
-                return;
+            let errorMsg = 'خطأ في التسجيل';
+            switch(event.error) {
+                case 'no-speech':
+                    errorMsg = 'لم يتم اكتشاف صوت، حاول مرة أخرى';
+                    break;
+                case 'audio-capture':
+                    errorMsg = 'لا يمكن الوصول للميكروفون';
+                    break;
+                case 'not-allowed':
+                    errorMsg = 'يجب السماح باستخدام الميكروفون';
+                    break;
+                default:
+                    errorMsg = event.error;
             }
             
-            const html = appointments.map(apt => `
-                <div class="appointment-item">
-                    <div class="appointment-info">
-                        <h3>${apt.title}</h3>
-                        <div class="appointment-date">
-                            <i class="fas fa-calendar"></i> ${new Date(apt.date).toLocaleDateString('ar-SA')}
-                            <i class="fas fa-clock" style="margin-right: 15px;"></i> ${apt.time}
-                            ${apt.reminderEnabled ? '<i class="fas fa-envelope" style="margin-right: 15px; color: #4caf50;"></i>' : ''}
-                        </div>
-                        ${apt.description ? `<p style="margin-top: 5px; color: #666;">${apt.description}</p>` : ''}
-                    </div>
-                    <div class="appointment-actions">
-                        ${apt.reminderEnabled && apt.reminderEmail ? `
-                            <button class="btn btn-success btn-sm" onclick="sendEmailReminder('${apt._id}')">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        ` : ''}
-                        <button class="btn btn-danger btn-sm" onclick="deleteAppointment('${apt._id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-            
-            container.innerHTML = html;
-        }
-
-        async function deleteAppointment(id) {
-            if (!confirm('هل تريد حذف هذا الموعد؟')) return;
-            
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_URL}/appointments/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if ((await response.json()).success) {
-                    alert('✅ تم الحذف');
-                    loadAppointments();
-                }
-            } catch (error) {
-                alert('❌ خطأ في الحذف');
-            }
-        }
-
-        async function sendEmailReminder(id) {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_URL}/appointments/${id}/email-reminder`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                const data = await response.json();
-                alert(data.success ? '✅ تم إرسال التذكير' : '❌ ' + data.message);
-            } catch (error) {
-                alert('❌ خطأ في إرسال التذكير');
-            }
-        }
-
-        function toggleVoiceAppointment() {
-            if (!('webkitSpeechRecognition' in window)) {
-                alert('❌ استخدم Chrome للتسجيل الصوتي');
-                return;
-            }
-            isRecording ? stopRecording() : startRecording();
-        }
-
-        function startRecording() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'ar-SA';
-            recognition.continuous = false;
-            
-            recognition.onstart = () => {
-                isRecording = true;
-                const btn = document.getElementById('voiceBtn');
-                btn.innerHTML = '<i class="fas fa-stop"></i> إيقاف';
-                btn.style.background = '#f44336';
-                alert('🎤 ابدأ الكلام الآن...');
-            };
-            
-            recognition.onresult = async (event) => {
-                const text = event.results[0][0].transcript;
-                console.log('✅ تم التعرف على:', text);
-                
-                document.getElementById('title').value = text;
-                
-                const today = new Date().toISOString().split('T')[0];
-                const now = new Date().toTimeString().split(' ')[0].substring(0, 5);
-                
-                const appointmentData = {
-                    title: text,
-                    date: document.getElementById('date').value || today,
-                    time: document.getElementById('time').value || now,
-                    description: 'تم الإضافة بالصوت',
-                    reminderEnabled: false
-                };
-                
-                try {
-                    const token = localStorage.getItem('token');
-                    const response = await fetch(`${API_URL}/appointments`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(appointmentData)
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        alert('✅ تم إضافة الموعد: ' + text);
-                        document.getElementById('appointmentForm').reset();
-                        await loadAppointments();
-                    } else {
-                        alert('❌ خطأ: ' + data.message);
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('❌ خطأ في إضافة الموعد');
-                }
-            };
-            
-            recognition.onerror = (event) => {
-                console.error('❌ خطأ في التسجيل:', event.error);
-                alert('❌ خطأ: ' + event.error);
-                stopRecording();
-            };
-            
-            recognition.onend = () => {
-                stopRecording();
-            };
-            
-            try {
-                recognition.start();
-            } catch (error) {
-                alert('❌ لا يمكن بدء التسجيل: ' + error.message);
+            alert('❌ ' + errorMsg);
+            stopRecording();
+        };
+        
+        recognition.onend = () => {
+            if (isRecording) {
                 stopRecording();
             }
+        };
+        
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('❌ فشل بدء التسجيل:', error);
+            alert('❌ لا يمكن بدء التسجيل: ' + error.message);
+            stopRecording();
         }
+    }
 
-        function stopRecording() {
-            isRecording = false;
-            const btn = document.getElementById('voiceBtn');
-            btn.innerHTML = '<i class="fas fa-microphone"></i> تسجيل صوتي';
+    function stopRecording() {
+        isRecording = false;
+        
+        // إيقاف العداد
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        // إيقاف المؤقت التلقائي
+        if (recordingTimeout) {
+            clearTimeout(recordingTimeout);
+            recordingTimeout = null;
+        }
+        
+        // إخفاء مؤشر التسجيل
+        const indicator = document.getElementById('recordingIndicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+        
+        // إعادة الزر للحالة الطبيعية
+        const btn = document.getElementById('voiceBtn');
+        if (btn) {
             btn.style.background = '#4caf50';
-            if (recognition) recognition.stop();
+            btn.innerHTML = '<i class="fas fa-microphone"></i> <span>اضافة موعد من خلال تسجيل صوتي</span>';
         }
-    </script>
+        
+        // إيقاف التسجيل
+        if (recognition) {
+            try {
+                recognition.stop();
+            } catch (e) {
+                console.log('Recognition already stopped');
+            }
+        }
+        
+        recordingSeconds = 0;
+    }
+</script>
 </body>
 </html>

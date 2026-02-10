@@ -5,65 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">مدير المصروفات الذكي</title>
     <meta name="description" id="pageDescription" content="تطبيق إدارة المصروفات والمواعيد بالذكاء الاصطناعي">
-    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- الأيقونات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
 
 
-<link rel="stylesheet" href="css/charts.css">
+<!-- تصميم صفحة index فقط - سيتجاوز الكل -->
+<link rel="stylesheet" href="css/index.css">
 
+    
 </head>
 <body>
+    <!-- Nav Overlay -->
+    <div class="nav-overlay" id="navOverlay" onclick="toggleMobileMenu()"></div>
+
     <!-- Header -->
     <header class="header">
         <nav class="navbar">
-    <div class="container">
-        <div class="logo">
-    <i class="fas fa-wallet"></i>
-    <span id="siteName">مدير المصروفات الذكي</span>
-</div>
-        <ul class="nav-menu" id="navMenu">
-    <li><a href="#home" class="active">الرئيسية</a></li>
-    <li><a href="#features">المميزات</a></li>
-    <li><a href="subscription.html">الاشتراكات</a></li>
-    <li><a href="#!" onclick="showLoginModal(); return false;">تسجيل الدخول</a></li>
-</ul>
-        <div class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    </div>
-</nav>
+            <div class="container">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span id="siteName">مدير المصروفات الذكي</span>
+                </div>
+                
+       <ul class="nav-menu" id="navMenu">
+             <li class="close-mobile-menu">
+                <button onclick="toggleMobileMenu()">
+                  <i class="fas fa-times"></i> إغلاق
+                   </button>
+    </li>
+                    <li><a href="#home" class="active">الرئيسية</a></li>
+                    <li><a href="#features">المميزات</a></li>
+                    <li><a href="subscription.html">الاشتراكات</a></li>
+                    <li><a href="#!" onclick="showLoginModal(); return false;">تسجيل الدخول</a></li>
+                </ul>
+                
+                <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
     </header>
 
     <!-- Hero Section -->
-<section id="home" class="hero">
-    <div class="container">
-        <div class="hero-content">
-            <h1 class="hero-title" id="heroTitle">إدارة مصروفاتك بذكاء اصطناعي</h1>
-            <p class="hero-description" id="heroDescription">
-                تتبع مصروفاتك، نظم مواعيدك، واحصل على تقارير تفصيلية بكل سهولة
-                باستخدام الذكاء الاصطناعي والأوامر الصوتية
-            </p>
-            <div class="hero-buttons">
-                <button class="btn btn-primary" onclick="showRegisterModal()">
-                    <i class="fas fa-rocket"></i> ابدأ الآن مجاناً
-                </button>
-                <button class="btn btn-secondary" onclick="scrollToFeatures()">
-                    <i class="fas fa-info-circle"></i> اعرف المزيد
-                </button>
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title" id="heroTitle">إدارة مصروفاتك بذكاء اصطناعي</h1>
+                <p class="hero-description" id="heroDescription">
+                    تتبع مصروفاتك، نظم مواعيدك، واحصل على تقارير تفصيلية بكل سهولة
+                    باستخدام الذكاء الاصطناعي والأوامر الصوتية
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="showRegisterModal()">
+                        <i class="fas fa-rocket"></i> ابدأ الآن مجاناً
+                    </button>
+                    <button class="btn btn-secondary" onclick="scrollToFeatures()">
+                        <i class="fas fa-info-circle"></i> اعرف المزيد
+                    </button>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img id="heroImage" src="https://via.placeholder.com/500x400/667eea/ffffff?text=Smart+Expense+Manager" alt="مدير المصروفات">
             </div>
         </div>
-        <div class="hero-image">
-            <img id="heroImage" src="https://via.placeholder.com/500x400/4a90e2/ffffff?text=Smart+Expense+Manager" alt="Hero Image">
-        </div>
-    </div>
-</section>
+    </section>
 
     <!-- Features Section -->
     <section id="features" class="features">
         <div class="container">
             <h2 class="section-title">مميزات التطبيق</h2>
+            
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -93,8 +108,8 @@
                     <div class="feature-icon">
                         <i class="fas fa-bell"></i>
                     </div>
-                    <h3>تذكيرات واتساب</h3>
-                    <p>تذكيرات تلقائية لمواعيدك عبر واتساب</p>
+                    <h3>تذكيرات ذكية</h3>
+                    <p>تذكيرات تلقائية لمواعيدك عبر البريد الإلكتروني</p>
                 </div>
 
                 <div class="feature-card">
@@ -117,44 +132,47 @@
     </section>
 
     <!-- CTA Section -->
-<section class="cta">
-    <div class="container">
-        <h2 id="ctaTitle">جاهز للبدء؟</h2>
-        <p id="ctaDescription">انضم لآلاف المستخدمين الذين يديرون مصروفاتهم بذكاء</p>
-        <button class="btn btn-primary" onclick="showRegisterModal()">
-            <i class="fas fa-user-plus"></i> إنشاء حساب مجاني
-        </button>
-    </div>
-</section>
+    <section class="cta">
+        <div class="container">
+            <h2 id="ctaTitle">جاهز للبدء؟</h2>
+            <p id="ctaDescription">انضم لآلاف المستخدمين الذين يديرون مصروفاتهم بذكاء</p>
+            <button class="btn btn-primary" onclick="showRegisterModal()">
+                <i class="fas fa-user-plus"></i> إنشاء حساب مجاني
+            </button>
+        </div>
+    </section>
 
     <!-- Footer -->
-<footer class="footer">
-    <div class="container">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>عن التطبيق</h4>
-                <p id="footerAbout">مدير المصروفات الذكي - حلك الأمثل لإدارة مصروفاتك ومواعيدك</p>
-            </div>
-            <div class="footer-section">
-                <h4>روابط سريعة</h4>
-                <ul id="footerLinks">
-                    <li><a href="#home">الرئيسية</a></li>
-                    <li><a href="subscription.html">الاشتراكات</a></li>
-                    <li><a href="#features">المميزات</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>تواصل معنا</h4>
-                <div class="social-links" id="socialLinks">
-                    <!-- سيتم ملؤها ديناميكياً -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>عن التطبيق</h4>
+                    <p id="footerAbout">مدير المصروفات الذكي - حلك الأمثل لإدارة مصروفاتك ومواعيدك</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <ul id="footerLinks">
+                        <li><a href="#home">الرئيسية</a></li>
+                        <li><a href="subscription.html">الاشتراكات</a></li>
+                        <li><a href="#features">المميزات</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>تواصل معنا</h4>
+                    <div class="social-links" id="socialLinks">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
                 </div>
             </div>
+            <div class="footer-bottom">
+                <p id="footerCopyright">&copy; 2025 مدير المصروفات الذكي. جميع الحقوق محفوظة.</p>
+            </div>
         </div>
-        <div class="footer-bottom">
-            <p id="footerCopyright">&copy; 2024 مدير المصروفات الذكي. جميع الحقوق محفوظة.</p>
-        </div>
-    </div>
-</footer>
+    </footer>
 
     <!-- Login Modal -->
     <div id="loginModal" class="modal">
@@ -180,166 +198,204 @@
         </div>
     </div>
 
-<!-- Register Modal -->
-<div id="registerModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('registerModal')">&times;</span>
-        <h2>
-            <i class="fas fa-user-plus"></i>
-            إنشاء حساب جديد
-        </h2>
-        <form id="registerForm" onsubmit="handleRegister(event)">
-            <div class="form-group">
-                <label>
-                    <i class="fas fa-user"></i>
-                    الاسم الكامل
-                </label>
-                <input 
-                    type="text" 
-                    id="registerName" 
-                    required 
-                    placeholder="أدخل اسمك الكامل"
-                    minlength="3"
-                >
-                <small style="color: #7f8c8d; font-size: 0.85rem;">
-                    يجب أن يكون الاسم 3 أحرف على الأقل
-                </small>
-            </div>
-            
-            <div class="form-group">
-                <label>
-                    <i class="fas fa-envelope"></i>
-                    البريد الإلكتروني
-                </label>
-                <input 
-                    type="email" 
-                    id="registerEmail" 
-                    required 
-                    placeholder="example@email.com"
-                >
-                <small style="color: #7f8c8d; font-size: 0.85rem;">
-                    سيتم استخدامه لتسجيل الدخول
-                </small>
-            </div>
-            
-            <div class="form-group">
-                <label>
-                    <i class="fas fa-phone"></i>
-                    رقم الهاتف
-                </label>
-                <input 
-                    type="tel" 
-                    id="registerPhone" 
-                    required 
-                    placeholder="05xxxxxxxx"
-                    pattern="05[0-9]{8}"
-                >
-                <small style="color: #7f8c8d; font-size: 0.85rem;">
-                    مثال: 0501234567
-
-		<!-- في نموذج التسجيل، أضف هذا الحقل بعد حقل الهاتف -->
-<div class="form-group">
-    <label>
-        <i class="fas fa-money-bill-wave"></i>
-        العملة
-    </label>
-    <select id="registerCurrency" required>
-        <optgroup label="دول الخليج">
-            <option value="SAR" selected>🇸🇦 ريال سعودي (SAR)</option>
-            <option value="AED">🇦🇪 درهم إماراتي (AED)</option>
-            <option value="KWD">🇰🇼 دينار كويتي (KWD)</option>
-            <option value="BHD">🇧🇭 دينار بحريني (BHD)</option>
-            <option value="OMR">🇴🇲 ريال عماني (OMR)</option>
-            <option value="QAR">🇶🇦 ريال قطري (QAR)</option>
-        </optgroup>
-        <optgroup label="دول عربية أخرى">
-            <option value="EGP">🇪🇬 جنيه مصري (EGP)</option>
-            <option value="JOD">🇯🇴 دينار أردني (JOD)</option>
-            <option value="LBP">🇱🇧 ليرة لبنانية (LBP)</option>
-            <option value="IQD">🇮🇶 دينار عراقي (IQD)</option>
-            <option value="SYP">🇸🇾 ليرة سورية (SYP)</option>
-            <option value="YER">🇾🇪 ريال يمني (YER)</option>
-            <option value="MAD">🇲🇦 درهم مغربي (MAD)</option>
-            <option value="TND">🇹🇳 دينار تونسي (TND)</option>
-            <option value="DZD">🇩🇿 دينار جزائري (DZD)</option>
-            <option value="LYD">🇱🇾 دينار ليبي (LYD)</option>
-            <option value="SDG">🇸🇩 جنيه سوداني (SDG)</option>
-        </optgroup>
-        <optgroup label="عملات عالمية">
-            <option value="USD">🇺🇸 دولار أمريكي (USD)</option>
-            <option value="EUR">🇪🇺 يورو (EUR)</option>
-            <option value="GBP">🇬🇧 جنيه استرليني (GBP)</option>
-        </optgroup>
-    </select>
-    <small style="color: #7f8c8d; font-size: 0.85rem;">
-        يمكنك تغييرها لاحقاً من الإعدادات
-    </small>
-</div>
-                </small>
-            </div>
-            
-            <div class="form-group">
-                <label>
-                    <i class="fas fa-lock"></i>
-                    كلمة المرور
-                </label>
-                <input 
-                    type="password" 
-                    id="registerPassword" 
-                    required 
-                    minlength="6"
-                    placeholder="أدخل كلمة مرور قوية"
-                >
-                <small style="color: #7f8c8d; font-size: 0.85rem;">
-                    يجب أن تكون 6 أحرف على الأقل
-                </small>
-            </div>
-
-            <div class="form-group">
-                <label>
-                    <i class="fas fa-lock"></i>
-                    تأكيد كلمة المرور
-                </label>
-                <input 
-                    type="password" 
-                    id="registerPasswordConfirm" 
-                    required 
-                    minlength="6"
-                    placeholder="أعد إدخال كلمة المرور"
-                >
-            </div>
-
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>
+                <i class="fas fa-user-plus"></i>
+                إنشاء حساب جديد
+            </h2>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-user"></i>
+                        الاسم الكامل
+                    </label>
                     <input 
-                        type="checkbox" 
-                        id="registerTerms" 
-                        required
-                        style="width: auto; margin: 0;"
+                        type="text" 
+                        id="registerName" 
+                        required 
+                        placeholder="أدخل اسمك الكامل"
+                        minlength="3"
                     >
-                    <span>أوافق على <a href="#" style="color: #667eea;">الشروط والأحكام</a></span>
-                </label>
-            </div>
-            
-            <button 
-                type="submit" 
-                class="btn btn-primary btn-block"
-                id="registerBtn"
-            >
-                <i class="fas fa-user-plus"></i> 
-                إنشاء حساب
-            </button>
-            
-            <p class="modal-footer-text">
-                لديك حساب؟ 
-                <a href="#" onclick="closeModal('registerModal'); showLoginModal()">
-                    تسجيل الدخول
-                </a>
-            </p>
-        </form>
+                    <small style="color: #7f8c8d; font-size: 0.85rem;">
+                        يجب أن يكون الاسم 3 أحرف على الأقل
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-envelope"></i>
+                        البريد الإلكتروني
+                    </label>
+                    <input 
+                        type="email" 
+                        id="registerEmail" 
+                        required 
+                        placeholder="example@email.com"
+                    >
+                    <small style="color: #7f8c8d; font-size: 0.85rem;">
+                        سيتم استخدامه لتسجيل الدخول
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-phone"></i>
+                        رقم الهاتف
+                    </label>
+                    <input 
+                        type="tel" 
+                        id="registerPhone" 
+                        required 
+                        placeholder="05xxxxxxxx"
+                        pattern="05[0-9]{8}"
+                    >
+                    <small style="color: #7f8c8d; font-size: 0.85rem;">
+                        مثال: 0501234567
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-money-bill-wave"></i>
+                        العملة
+                    </label>
+                    <select id="registerCurrency" required>
+                        <optgroup label="دول الخليج">
+                            <option value="SAR" selected>🇸🇦 ريال سعودي (SAR)</option>
+                            <option value="AED">🇦🇪 درهم إماراتي (AED)</option>
+                            <option value="KWD">🇰🇼 دينار كويتي (KWD)</option>
+                            <option value="BHD">🇧🇭 دينار بحريني (BHD)</option>
+                            <option value="OMR">🇴🇲 ريال عماني (OMR)</option>
+                            <option value="QAR">🇶🇦 ريال قطري (QAR)</option>
+                        </optgroup>
+                        <optgroup label="دول عربية أخرى">
+                            <option value="EGP">🇪🇬 جنيه مصري (EGP)</option>
+                            <option value="JOD">🇯🇴 دينار أردني (JOD)</option>
+                            <option value="USD">🇺🇸 دولار أمريكي (USD)</option>
+                            <option value="EUR">🇪🇺 يورو (EUR)</option>
+                            <option value="GBP">🇬🇧 جنيه استرليني (GBP)</option>
+                        </optgroup>
+                    </select>
+                    <small style="color: #7f8c8d; font-size: 0.85rem;">
+                        يمكنك تغييرها لاحقاً من الإعدادات
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-lock"></i>
+                        كلمة المرور
+                    </label>
+                    <input 
+                        type="password" 
+                        id="registerPassword" 
+                        required 
+                        minlength="6"
+                        placeholder="أدخل كلمة مرور قوية"
+                    >
+                    <small style="color: #7f8c8d; font-size: 0.85rem;">
+                        يجب أن تكون 6 أحرف على الأقل
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-lock"></i>
+                        تأكيد كلمة المرور
+                    </label>
+                    <input 
+                        type="password" 
+                        id="registerPasswordConfirm" 
+                        required 
+                        minlength="6"
+                        placeholder="أعد إدخال كلمة المرور"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input 
+                            type="checkbox" 
+                            id="registerTerms" 
+                            required
+                            style="width: auto; margin: 0;"
+                        >
+                        <span>أوافق على <a href="#" style="color: #667eea;">الشروط والأحكام</a></span>
+                    </label>
+                </div>
+                
+                <button 
+                    type="submit" 
+                    class="btn btn-primary btn-block"
+                    id="registerBtn"
+                >
+                    <i class="fas fa-user-plus"></i> 
+                    إنشاء حساب
+                </button>
+                
+                <p class="modal-footer-text">
+                    لديك حساب؟ 
+                    <a href="#" onclick="closeModal('registerModal'); showLoginModal()">
+                        تسجيل الدخول
+                    </a>
+                </p>
+            </form>
+        </div>
     </div>
-</div>
 
     <script src="js/main.js"></script>
+    <script>
+        // Toggle Mobile Menu
+        function toggleMobileMenu() {
+            const navMenu = document.getElementById('navMenu');
+            const navOverlay = document.getElementById('navOverlay');
+            const hamburger = document.getElementById('hamburger');
+            
+            navMenu.classList.toggle('active');
+            navOverlay.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        }
+
+        // Close menu when clicking on a link
+        document.addEventListener('DOMContentLoaded', function () {
+                  const navLinks = document.querySelectorAll('#navMenu a');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 768) {
+                toggleMobileMenu();
+            
+            }
+        });
+    });
+});
+
+
+        function scrollToFeatures() {
+            document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+        }
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    const navMenu = document.getElementById('navMenu');
+
+    navMenu.addEventListener('click', function (e) {
+        const link = e.target.closest('a');
+
+        if (!link) return;   // إذا ليس رابط، اخرج
+
+        if (window.innerWidth <= 768) {
+            toggleMobileMenu();
+        }
+    });
+
+});
+
+
+
+    </script>
 </body>
 </html>

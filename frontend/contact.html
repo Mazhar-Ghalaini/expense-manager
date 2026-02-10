@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تواصل معنا - مديرك الشخصي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar {
+            padding: 1rem 0;
+        }
+
+        .navbar .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+            transition: all 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 5px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: #2c3e50;
+            transition: all 0.3s;
+        }
+
+        /* Contact Section */
+        .contact-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .contact-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .contact-header h1 {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .contact-header p {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        /* Contact Info Cards */
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s;
+            animation: fadeInRight 0.8s;
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .info-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .info-content h3 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .info-content p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        /* Contact Form */
+        .contact-form-wrapper {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeInLeft 0.8s;
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .contact-form-wrapper h2 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .form-group label i {
+            margin-left: 8px;
+            color: #667eea;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-submit i {
+            font-size: 20px;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Social Section */
+        .social-section {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: fadeInUp 0.8s;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .social-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .social-section p {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .social-link {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .social-link:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(0,0,0,0.2);
+            color: white;
+            padding: 40px 20px 20px;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .footer-section p,
+        .footer-section ul {
+            opacity: 0.9;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+
+        .footer-section a {
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .footer-section a:hover {
+            opacity: 0.7;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            opacity: 0.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .contact-header h1 {
+                font-size: 36px;
+            }
+
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-form-wrapper {
+                padding: 30px 20px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        #navOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #navOverlay.active {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="container">
+                <a href="./index.html" class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>مديرك الشخصي</span>
+                </a>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="./index.html">الرئيسية</a></li>
+                    <li><a href="./index.html#features">المميزات</a></li>
+                    <li><a href="./subscription.html">الاشتراك</a></li>
+                    <li><a href="./contact.html" class="active">تواصل معنا</a></li>
+                    <li><a href="javascript:void(0);" onclick="checkLoginStatus(); return false;">دخول / تسجيل</a></li>
+                </ul>
+                <div class="hamburger" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Contact Container -->
+    <div class="contact-container">
+        <!-- Header -->
+        <div class="contact-header">
+            <h1><i class="fas fa-envelope"></i> تواصل معنا</h1>
+            <p>نحن هنا للإجابة على جميع استفساراتك</p>
+        </div>
+
+        <!-- Contact Grid -->
+        <div class="contact-grid">
+            <!-- Contact Info -->
+            <div class="contact-info">
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>البريد الإلكتروني</h3>
+                        <p>support@yourapp.com</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>الهاتف</h3>
+                        <p>+966 XX XXX XXXX</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>العنوان</h3>
+                        <p>الرياض، المملكة العربية السعودية</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>ساعات العمل</h3>
+                        <p>الأحد - الخميس: 9 ص - 5 م</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="contact-form-wrapper">
+                <h2>أرسل لنا رسالة</h2>
+                
+                <div id="alertMessage" class="alert"></div>
+
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label for="name">
+                            <i class="fas fa-user"></i>
+                            الاسم الكامل
+                        </label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="أدخل اسمك الكامل" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i>
+                            البريد الإلكتروني
+                        </label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="example@email.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">
+                            <i class="fas fa-phone"></i>
+                            رقم الهاتف (اختياري)
+                        </label>
+                        <input type="tel" id="phone" name="phone" class="form-control" placeholder="+966 XX XXX XXXX">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject">
+                            <i class="fas fa-tag"></i>
+                            الموضوع
+                        </label>
+                        <input type="text" id="subject" name="subject" class="form-control" placeholder="موضوع رسالتك" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">
+                            <i class="fas fa-comment"></i>
+                            الرسالة
+                        </label>
+                        <textarea id="message" name="message" class="form-control" placeholder="اكتب رسالتك هنا..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>إرسال الرسالة</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Social Section -->
+        <div class="social-section">
+            <h2>تابعنا على وسائل التواصل</h2>
+            <p>ابقَ على اطلاع بآخر التحديثات والعروض</p>
+            <div class="social-links">
+                <a href="#" class="social-link" title="Facebook">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="social-link" title="Twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="social-link" title="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" class="social-link" title="LinkedIn">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="#" class="social-link" title="WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>عن التطبيق</h4>
+                <p>مدير المصروفات الذكي - حلك الأمثل لإدارة مصروفاتك ومواعيدك بذكاء</p>
+            </div>
+            <div class="footer-section">
+                <h4>روابط سريعة</h4>
+                <ul>
+                    <li><a href="./index.html">الرئيسية</a></li>
+                    <li><a href="./index.html#features">المميزات</a></li>
+                    <li><a href="./subscription.html">الاشتراك</a></li>
+                    <li><a href="./contact.html">تواصل معنا</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>تواصل معنا</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 مدير المصروفات الذكي. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <div id="navOverlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script src="js/subscription.js"></script>
+    <script>
+        // ============================================
+        // 🔧 ضع معلومات EmailJS هنا
+        // ============================================
+        const EMAILJS_CONFIG = {
+            serviceID: 'service_dgwsyfo',      // ضع Service ID هنا
+            templateID: 'template_4kqjtab',    // ضع Template ID هنا
+            publicKey: 'vJYD1ib4CB9efZDYK'       // ضع Public Key هنا
+        };
+
+        // Initialize EmailJS
+        emailjs.init(EMAILJS_CONFIG.publicKey);
+
+        // Handle Form Submit
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const alertDiv = document.getElementById('alertMessage');
+            
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+            
+            // Get form data
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                subject: document.getElementById('subject').value,
+                message: document.getElementById('message').value
+            };
+            
+            // Send email
+            emailjs.send(
+                EMAILJS_CONFIG.serviceID,
+                EMAILJS_CONFIG.templateID,
+                formData
+            )
+            .then(function(response) {
+                // Success
+                showAlert('success', 'تم إرسال رسالتك بنجاح! سنتواصل معك قريباً 🎉');
+                document.getElementById('contactForm').reset();
+            })
+            .catch(function(error) {
+                // Error
+                showAlert('error', 'حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.');
+                console.error('EmailJS Error:', error);
+            })
+            .finally(function() {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>إرسال الرسالة</span>';
+            });
+        });
+
+        // Show Alert Function
+        function showAlert(type, message) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.className = `alert alert-${type} show`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = 'app.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById("navMenu");
+            const overlay = document.getElementById("navOverlay");
+            menu.classList.toggle("active");
+            overlay.classList.toggle("active");
+        }
+    </script>
+
+
+</body>
+</html>

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الاشتراك - موظفك الشخصي</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- تصميم صفحة index فقط - سيتجاوز الكل -->
+<link rel="stylesheet" href="css/index.css">
     <style>
         * {
             margin: 0;
@@ -358,9 +361,9 @@
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
+         @media (max-width: 768px) {
             .nav-menu {
-                display: none;
+                display: flex;
             }
 
             .hamburger {
@@ -400,9 +403,54 @@
                 justify-content: center;
             }
         }
+
+    #navOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 998;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    #navOverlay.active {
+        display: block;
+        opacity: 1;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .nav-menu {
+        position: fixed;
+        right: -300px;
+        top: 0;
+        height: 100%;
+        width: 280px;
+        background: white;
+        flex-direction: column;
+        padding: 20px;
+        gap: 0;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+        transition: right 0.3s ease;
+        z-index: 999;
+        overflow-y: auto;
+        
+    }
+
+    .nav-menu.active {
+        right: 0;
+    }
+
+}
+
+
     </style>
 </head>
 <body>
+
+
     <!-- Header -->
     <header class="header">
         <nav class="navbar">
@@ -411,14 +459,19 @@
                     <i class="fas fa-wallet"></i>
                     <span>مديرك الشخصي</span>
                 </a>
-                <ul class="nav-menu">
-                    <li><a href="index.html">الرئيسية</a></li>
-                    <li><a href="index.html#features">المميزات</a></li>
+                        <ul class="nav-menu" id="navMenu"> 
+                    <li><a href="./index.html">الرئيسية</a></li>
+                    <li><a href="./index.html#features">المميزات</a></li>
                     <li><a href="subscription.html" class="active">الاشتراك</a></li>
-                    <li><a href="index.html#contact">تواصل معنا</a></li>
-                    <li><a href="#" onclick="checkLoginStatus()">دخول / تسجيل</a></li>
+                    <li><a href="contact.html">تواصل معنا</a></li>
+                    <li><a href="#" onclick="checkLoginStatus() ">دخول / 
+تسجيل</a></li>
+                    
+                    
                 </ul>
-                <div class="hamburger">
+
+
+                <div class="hamburger" onclick="toggleMobileMenu()">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -557,8 +610,34 @@
             <p>&copy; 2025 مدير المصروفات الذكي. جميع الحقوق محفوظة.</p>
         </div>
     </footer>
+    
+<!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>تسجيل الدخول</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> دخول
+                </button>
+                <p class="modal-footer-text">
+                    ليس لديك حساب؟ <a href="#" onclick="closeModal('loginModal'); showRegisterModal()">سجل الآن</a>
+                </p>
+            </form>
+        </div>
+    </div>
 
     <script>
+
+
         function checkLoginStatus() {
             const token = localStorage.getItem('token');
             if (token) {
@@ -583,6 +662,48 @@
                 // window.location.href = 'payment.html';
             }
         }
+function toggleMobileMenu() {
+    const menu = document.getElementById("navMenu");
+    const overlay = document.getElementById("navOverlay");
+    
+
+    menu.classList.toggle("active");
+    overlay.classList.toggle("active");
+    
+}
+
+
     </script>
+
+<div id="navOverlay" onclick="toggleMobileMenu()"></div>
+<script src="js/subscription.js"></script>
+
+<script>
+// دوال مخصصة لصفحة subscription فقط
+
+function subscribe() {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        alert('يجب عليك تسجيل الدخول أولاً');
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    if (confirm('هل تريد الاشتراك في الخطة الشهرية بقيمة 5$?\n\n✅ تجربة مجانية 14 يوم\n✅ جميع المميزات مفعّلة\n✅ يمكن الإلغاء في أي وقت')) {
+        alert('✅ رائع! سيتم توجيهك إلى صفحة الدفع الآمنة...\n\n(يمكن دمج Stripe/PayPal هنا)');
+    }
+}
+
+function toggleMobileMenu() {
+    const menu = document.getElementById("navMenu");
+    const overlay = document.getElementById("navOverlay");
+    menu.classList.toggle("active");
+    overlay.classList.toggle("active");
+}
+</script>
+
+
+
 </body>
 </html>

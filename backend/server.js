@@ -7,6 +7,8 @@ const Settings = require('./models/Settings');
 require('dotenv').config();
 
 const app = express();
+const { startEmailScheduler } = require('./utils/emailScheduler');
+const { startReminderScheduler } = require('./utils/reminderScheduler');
 
 // Connect to database
 connectDB();
@@ -206,6 +208,7 @@ app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api', dashboardRoutes);
+app.use('/api/schedule', require('./routes/schedule'));
 
 
 // ==========================================
@@ -328,6 +331,11 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+
+// ==========================================
+// Start Server
+// ==========================================
 // ==========================================
 // Start Server
 // ==========================================
@@ -341,8 +349,13 @@ app.listen(PORT, () => {
   console.log(`🚀 Admin: http://localhost:${PORT}/admin.html`);
   console.log(`🚀 Node: ${process.version}`);
   console.log('🚀 ═══════════════════════════════════════');
-});
 
+  // تفعيل نظام التذكيرات بعد تشغيل السيرفر
+  setTimeout(() => {
+    startEmailScheduler();      // ✅ تذكيرات المواعيد
+    startReminderScheduler();   // ✅ تذكيرات مخصصة
+  }, 3000);
+});
 // ==========================================
 // Graceful shutdown
 // ==========================================

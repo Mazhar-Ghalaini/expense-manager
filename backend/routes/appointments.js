@@ -3,6 +3,16 @@ const router = express.Router();
 const Appointment = require('../models/Appointment');
 const { auth } = require('../middleware/auth');
 const axios = require('axios');
+const nodemailer = require('nodemailer');
+
+// إعداد Nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 // ==========================================
 // Get all appointments
@@ -30,7 +40,7 @@ router.get('/', auth, async (req, res) => {
 // ==========================================
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, date, time, description, reminderEnabled, reminderEmail } = req.body;
+    const { title, date, time, description, reminderEnabled, reminderEmail, timezone  } = req.body;
     
     // إنشاء الموعد
     const appointment = await Appointment.create({
@@ -40,7 +50,9 @@ router.post('/', auth, async (req, res) => {
       time,
       description,
       reminderEnabled: !!reminderEnabled,
-      reminderEmail: reminderEnabled ? reminderEmail : null
+      reminderEmail: reminderEnabled ? reminderEmail : null,
+      timezone: timezone || 'UTC' // ← يجب أن تكون هذه آخر خاصية أو تنتهي بفاصلة
+
     });
 
     console.log('✅ تم إنشاء موعد:', appointment._id);
@@ -60,6 +72,7 @@ router.post('/', auth, async (req, res) => {
           relatedId: appointment._id,
           email: reminderEmail,
           completed: false
+
         });
         
         console.log('✅ تم إنشاء تذكير:', newReminder._id);
@@ -218,9 +231,28 @@ router.post('/:id/email-reminder', auth, async (req, res) => {
       console.error('خطأ في حفظ سجل الإرسال:', err);
     }
 
-    // هنا يمكن إضافة كود إرسال البريد الفعلي (nodemailer)
-    // لكن حالياً نحفظ فقط في التذكيرات
-    
+// إرسال البريد الإلكتروني
+const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: appointment.reminderEmail,
+    subject: `تذكير: ${appointment.title}`,
+    html: `
+        <div dir="rtl" style="font-family: 'Segoe UI', Arial; padding: 20px; background: #f5f5f5;">
+            <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h2 style="color: #667eea; margin-bottom: 20px;">🔔 تذكير بموعدك</h2>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="margin: 10px 0;"><strong>📌 العنوان:</strong> ${appointment.title}</p>
+                    <p style="margin: 10px 0;"><strong>📅 التاريخ:</strong> ${new Date(appointment.date).toLocaleDateString('ar-SA')}</p>
+                    <p style="margin: 10px 0;"><strong>🕐 الوقت:</strong> ${appointment.time}</p>
+                    ${appointment.description ? `<p style="margin: 10px 0;"><strong>📝 الوصف:</strong> ${appointment.description}</p>` : ''}
+                </div>
+                <p style="color: #666; margin-top: 20px;">مع تحياتنا،<br><strong>مديرك الشخصي</strong></p>
+            </div>
+        </div>
+    `
+};
+
+await transporter.sendMail(mailOptions);    
     res.json({
       success: true,
       message: `تم حفظ طلب التذكير لـ ${appointment.reminderEmail}`

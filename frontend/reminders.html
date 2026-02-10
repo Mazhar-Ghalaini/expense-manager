@@ -593,7 +593,7 @@
                 <div class="icon"><i class="fas fa-bell"></i></div>
                 <span>تذكيرات</span>
             </a>
-            <a href="ai-assistant.html" class="menu-item">
+            <a href="ai.html" class="menu-item">
                 <div class="icon"><i class="fas fa-robot"></i></div>
                 <span>الذكاء الاصطناعي</span>
             </a>
@@ -686,14 +686,98 @@
                 </div>
 
                 <div class="form-group">
-                    <label>الوقت *</label>
-                    <input type="time" id="reminderTime" required>
-                </div>
+    <label>الوقت *</label>
+    <input type="time" id="reminderTime" required>
+</div>
 
-                <div class="form-group">
-                    <label>البريد الإلكتروني (اختياري)</label>
-                    <input type="email" id="reminderEmail" placeholder="example@email.com">
-                </div>
+<div class="form-group">
+    <label for="reminderTimezone">
+        <i class="fas fa-globe"></i>
+        المنطقة الزمنية
+    </label>
+    <select id="reminderTimezone" name="timezone" class="form-control" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+        <optgroup label="أفريقيا">
+            <option value="Africa/Cairo">القاهرة (GMT+2)</option>
+            <option value="Africa/Casablanca">الدار البيضاء (GMT+1)</option>
+            <option value="Africa/Johannesburg">جوهانسبرغ (GMT+2)</option>
+            <option value="Africa/Lagos">لاغوس (GMT+1)</option>
+            <option value="Africa/Nairobi">نيروبي (GMT+3)</option>
+        </optgroup>
+        
+        <optgroup label="آسيا">
+            <option value="Asia/Riyadh">الرياض (GMT+3)</option>
+            <option value="Asia/Dubai">دبي (GMT+4)</option>
+            <option value="Asia/Kuwait">الكويت (GMT+3)</option>
+            <option value="Asia/Bahrain">البحرين (GMT+3)</option>
+            <option value="Asia/Qatar">قطر (GMT+3)</option>
+            <option value="Asia/Muscat">مسقط (GMT+4)</option>
+            <option value="Asia/Baghdad">بغداد (GMT+3)</option>
+            <option value="Asia/Damascus">دمشق (GMT+2)</option>
+            <option value="Asia/Beirut">بيروت (GMT+2)</option>
+            <option value="Asia/Amman">عمّان (GMT+2)</option>
+            <option value="Asia/Jerusalem">القدس (GMT+2)</option>
+            <option value="Asia/Tehran">طهران (GMT+3:30)</option>
+            <option value="Asia/Karachi">كراتشي (GMT+5)</option>
+            <option value="Asia/Kolkata">نيودلهي (GMT+5:30)</option>
+            <option value="Asia/Dhaka">دكا (GMT+6)</option>
+            <option value="Asia/Bangkok">بانكوك (GMT+7)</option>
+            <option value="Asia/Singapore">سنغافورة (GMT+8)</option>
+            <option value="Asia/Hong_Kong">هونغ كونغ (GMT+8)</option>
+            <option value="Asia/Shanghai">شنغهاي (GMT+8)</option>
+            <option value="Asia/Tokyo">طوكيو (GMT+9)</option>
+            <option value="Asia/Seoul">سيول (GMT+9)</option>
+        </optgroup>
+        
+        <optgroup label="أوروبا">
+            <option value="Europe/Berlin" selected>برلين (GMT+1)</option>
+            <option value="Europe/London">لندن (GMT+0)</option>
+            <option value="Europe/Paris">باريس (GMT+1)</option>
+            <option value="Europe/Rome">روما (GMT+1)</option>
+            <option value="Europe/Madrid">مدريد (GMT+1)</option>
+            <option value="Europe/Amsterdam">أمستردام (GMT+1)</option>
+            <option value="Europe/Brussels">بروكسل (GMT+1)</option>
+            <option value="Europe/Vienna">فيينا (GMT+1)</option>
+            <option value="Europe/Stockholm">ستوكهولم (GMT+1)</option>
+            <option value="Europe/Moscow">موسكو (GMT+3)</option>
+            <option value="Europe/Istanbul">إسطنبول (GMT+3)</option>
+        </optgroup>
+        
+        <optgroup label="أمريكا الشمالية">
+            <option value="America/New_York">نيويورك (GMT-5)</option>
+            <option value="America/Chicago">شيكاغو (GMT-6)</option>
+            <option value="America/Denver">دنفر (GMT-7)</option>
+            <option value="America/Los_Angeles">لوس أنجلوس (GMT-8)</option>
+            <option value="America/Toronto">تورنتو (GMT-5)</option>
+            <option value="America/Vancouver">فانكوفر (GMT-8)</option>
+            <option value="America/Mexico_City">مكسيكو سيتي (GMT-6)</option>
+        </optgroup>
+        
+        <optgroup label="أمريكا الجنوبية">
+            <option value="America/Sao_Paulo">ساو باولو (GMT-3)</option>
+            <option value="America/Buenos_Aires">بوينس آيرس (GMT-3)</option>
+            <option value="America/Bogota">بوغوتا (GMT-5)</option>
+            <option value="America/Lima">ليما (GMT-5)</option>
+        </optgroup>
+        
+        <optgroup label="أوقيانوسيا">
+            <option value="Australia/Sydney">سيدني (GMT+11)</option>
+            <option value="Australia/Melbourne">ملبورن (GMT+11)</option>
+            <option value="Pacific/Auckland">أوكلاند (GMT+13)</option>
+        </optgroup>
+    </select>
+</div>
+
+<div class="form-group">
+    <label>
+        <input type="checkbox" id="enableReminderEmail" onchange="toggleReminderEmailField()" style="width: auto; margin-left: 8px;">
+        تفعيل التذكير بالبريد الإلكتروني
+    </label>
+</div>
+
+<div class="form-group" id="reminderEmailField" style="display: none;">
+    <label>البريد الإلكتروني للتذكير *</label>
+    <input type="email" id="reminderEmail" placeholder="example@email.com">
+</div>
 
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-save"></i>
@@ -759,13 +843,16 @@
         document.getElementById('addReminderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const reminderData = {
-                title: document.getElementById('reminderTitle').value,
-                description: document.getElementById('reminderDescription').value,
-                date: document.getElementById('reminderDate').value,
-                time: document.getElementById('reminderTime').value,
-                email: document.getElementById('reminderEmail').value || null
-            };
+            const enableReminder = document.getElementById('enableReminderEmail').checked;
+const reminderData = {
+    title: document.getElementById('reminderTitle').value,
+    description: document.getElementById('reminderDescription').value,
+    date: document.getElementById('reminderDate').value,
+    time: document.getElementById('reminderTime').value,
+    timezone: document.getElementById('reminderTimezone').value || 'Europe/Berlin',
+    reminderEnabled: enableReminder,
+    reminderEmail: enableReminder ? document.getElementById('reminderEmail').value : null
+};
             
             try {
                 const token = localStorage.getItem('token');
@@ -792,6 +879,22 @@
                 alert('❌ خطأ في إضافة التذكير');
             }
         });
+
+// Toggle email field
+function toggleReminderEmailField() {
+    const checkbox = document.getElementById('enableReminderEmail');
+    const emailField = document.getElementById('reminderEmailField');
+    const emailInput = document.getElementById('reminderEmail');
+    
+    if (checkbox.checked) {
+        emailField.style.display = 'block';
+        emailInput.required = true;
+    } else {
+        emailField.style.display = 'none';
+        emailInput.required = false;
+        emailInput.value = '';
+    }
+}
     </script>
 </body>
 </html>

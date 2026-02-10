@@ -162,7 +162,93 @@ router.post('/login', async (req, res) => {
 });
 
 // ==========================================
-// Update user currency
+// Get User Profile - جديد
+// ==========================================
+router.get('/profile', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'المستخدم غير موجود' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        currency: user.currency,
+        subscription: user.subscription,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('❌ خطأ في جلب البروفايل:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في الخادم',
+      error: error.message 
+    });
+  }
+});
+
+// ==========================================
+// Update Email - جديد
+// ==========================================
+router.put('/update-email', protect, async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    // التحقق من صحة البريد
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'البريد الإلكتروني غير صحيح' 
+      });
+    }
+    
+    // التحقق من وجود البريد مسبقاً
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser && existingUser._id.toString() !== req.user._id.toString()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'البريد الإلكتروني مستخدم بالفعل' 
+      });
+    }
+    
+    // تحديث البريد
+    const user = await User.findByIdAndUpdate(
+      req.user._id, 
+      { email: email.toLowerCase().trim() }, 
+      { new: true }
+    ).select('-password');
+    
+    console.log('✅ تم تحديث البريد الإلكتروني:', email);
+    
+    res.json({ 
+      success: true, 
+      message: 'تم تحديث البريد بنجاح',
+      email: user.email
+    });
+  } catch (error) {
+    console.error('❌ خطأ في تحديث البريد:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في الخادم',
+      error: error.message 
+    });
+  }
+});
+
+// ==========================================
+// Update Currency
 // ==========================================
 router.patch('/update-currency', protect, async (req, res) => {
   try {
@@ -190,6 +276,8 @@ router.patch('/update-currency', protect, async (req, res) => {
       { new: true }
     ).select('-password');
     
+    console.log('✅ تم تحديث العملة إلى:', currencyInfo.nameAr);
+    
     res.json({
       success: true,
       message: `تم تغيير العملة إلى ${currencyInfo.nameAr}`,
@@ -197,6 +285,7 @@ router.patch('/update-currency', protect, async (req, res) => {
     });
     
   } catch (error) {
+    console.error('❌ خطأ في تحديث العملة:', error);
     res.status(500).json({ 
       success: false,
       message: 'خطأ في تحديث العملة', 
@@ -206,7 +295,7 @@ router.patch('/update-currency', protect, async (req, res) => {
 });
 
 // ==========================================
-// Get all currencies
+// Get All Currencies
 // ==========================================
 router.get('/currencies', (req, res) => {
   const { getAllCurrencies } = require('../config/currencies');
@@ -223,6 +312,20 @@ router.post('/change-password', protect, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'الرجاء إدخال كلمة المرور الحالية والجديدة' 
+      });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل' 
+      });
+    }
+    
     const user = await User.findById(req.user._id);
     
     const isMatch = await user.comparePassword(currentPassword);
@@ -236,11 +339,14 @@ router.post('/change-password', protect, async (req, res) => {
     user.password = newPassword;
     await user.save();
     
+    console.log('✅ تم تغيير كلمة المرور بنجاح');
+    
     res.json({
       success: true,
       message: 'تم تغيير كلمة المرور بنجاح'
     });
   } catch (error) {
+    console.error('❌ خطأ في تغيير كلمة المرور:', error);
     res.status(500).json({ 
       success: false,
       message: 'خطأ في تغيير كلمة المرور',

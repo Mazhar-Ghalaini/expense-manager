@@ -36,6 +36,45 @@ router.get('/', auth, async (req, res) => {
 });
 
 // ==========================================
+// Get single appointment by ID - جديد
+// ==========================================
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const appointment = await Appointment.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'الموعد غير موجود'
+      });
+    }
+
+    res.json({
+      success: true,
+      appointment: appointment
+    });
+  } catch (error) {
+    console.error('Error getting appointment:', error);
+    
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({
+        success: false,
+        message: 'معرف الموعد غير صحيح'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'خطأ في الخادم',
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
 // Add appointment مع دعم التذكيرات
 // ==========================================
 router.post('/', auth, async (req, res) => {
@@ -51,8 +90,7 @@ router.post('/', auth, async (req, res) => {
       description,
       reminderEnabled: !!reminderEnabled,
       reminderEmail: reminderEnabled ? reminderEmail : null,
-      timezone: timezone || 'UTC' // ← يجب أن تكون هذه آخر خاصية أو تنتهي بفاصلة
-
+      timezone: timezone || 'UTC'
     });
 
     console.log('✅ تم إنشاء موعد:', appointment._id);
@@ -72,7 +110,6 @@ router.post('/', auth, async (req, res) => {
           relatedId: appointment._id,
           email: reminderEmail,
           completed: false
-
         });
         
         console.log('✅ تم إنشاء تذكير:', newReminder._id);
@@ -231,31 +268,32 @@ router.post('/:id/email-reminder', auth, async (req, res) => {
       console.error('خطأ في حفظ سجل الإرسال:', err);
     }
 
-// إرسال البريد الإلكتروني
-const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: appointment.reminderEmail,
-    subject: `تذكير: ${appointment.title}`,
-    html: `
+    // إرسال البريد الإلكتروني
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: appointment.reminderEmail,
+      subject: `تذكير: ${appointment.title}`,
+      html: `
         <div dir="rtl" style="font-family: 'Segoe UI', Arial; padding: 20px; background: #f5f5f5;">
-            <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <h2 style="color: #667eea; margin-bottom: 20px;">🔔 تذكير بموعدك</h2>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <p style="margin: 10px 0;"><strong>📌 العنوان:</strong> ${appointment.title}</p>
-                    <p style="margin: 10px 0;"><strong>📅 التاريخ:</strong> ${new Date(appointment.date).toLocaleDateString('ar-SA')}</p>
-                    <p style="margin: 10px 0;"><strong>🕐 الوقت:</strong> ${appointment.time}</p>
-                    ${appointment.description ? `<p style="margin: 10px 0;"><strong>📝 الوصف:</strong> ${appointment.description}</p>` : ''}
-                </div>
-                <p style="color: #666; margin-top: 20px;">مع تحياتنا،<br><strong>مديرك الشخصي</strong></p>
+          <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #667eea; margin-bottom: 20px;">🔔 تذكير بموعدك</h2>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+              <p style="margin: 10px 0;"><strong>📌 العنوان:</strong> ${appointment.title}</p>
+              <p style="margin: 10px 0;"><strong>📅 التاريخ:</strong> ${new Date(appointment.date).toLocaleDateString('ar-SA')}</p>
+              <p style="margin: 10px 0;"><strong>🕐 الوقت:</strong> ${appointment.time}</p>
+              ${appointment.description ? `<p style="margin: 10px 0;"><strong>📝 الوصف:</strong> ${appointment.description}</p>` : ''}
             </div>
+            <p style="color: #666; margin-top: 20px;">مع تحياتنا،<br><strong>مديرك الشخصي</strong></p>
+          </div>
         </div>
-    `
-};
+      `
+    };
 
-await transporter.sendMail(mailOptions);    
+    await transporter.sendMail(mailOptions);    
+    
     res.json({
       success: true,
-      message: `تم حفظ طلب التذكير لـ ${appointment.reminderEmail}`
+      message: `تم إرسال التذكير بنجاح إلى ${appointment.reminderEmail}`
     });
   } catch (error) {
     console.error('Email error:', error);
@@ -305,7 +343,103 @@ router.post('/:id/whatsapp', auth, async (req, res) => {
 });
 
 // ==========================================
-// Update appointment status
+// Update appointment - مُحسّن
+// ==========================================
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const { title, date, time, description, timezone, reminderEnabled, reminderEmail } = req.body;
+    
+    const appointment = await Appointment.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      {
+        title,
+        date,
+        time,
+        description,
+        timezone,
+        reminderEnabled: !!reminderEnabled,
+        reminderEmail: reminderEnabled ? reminderEmail : null
+      },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'الموعد غير موجود' 
+      });
+    }
+
+    // تحديث التذكير المرتبط
+    if (reminderEnabled && reminderEmail) {
+      try {
+        const Reminder = require('../models/Reminder');
+        
+        // البحث عن تذكير موجود
+        const existingReminder = await Reminder.findOne({
+          relatedId: req.params.id,
+          type: 'appointment'
+        });
+
+        if (existingReminder) {
+          // تحديث التذكير الموجود
+          await Reminder.findByIdAndUpdate(existingReminder._id, {
+            title: `📅 ${title}`,
+            description: description || 'تذكير بموعد',
+            date: new Date(date),
+            time: time,
+            email: reminderEmail
+          });
+          console.log('✅ تم تحديث التذكير');
+        } else {
+          // إنشاء تذكير جديد
+          await Reminder.create({
+            user: req.user._id,
+            title: `📅 ${title}`,
+            description: description || 'تذكير بموعد',
+            date: new Date(date),
+            time: time,
+            type: 'appointment',
+            relatedId: appointment._id,
+            email: reminderEmail,
+            completed: false
+          });
+          console.log('✅ تم إنشاء تذكير جديد');
+        }
+      } catch (reminderError) {
+        console.error('⚠️ خطأ في تحديث التذكير:', reminderError);
+      }
+    } else {
+      // حذف التذكير إذا تم إلغاء التذكير
+      try {
+        const Reminder = require('../models/Reminder');
+        await Reminder.deleteMany({ 
+          relatedId: req.params.id,
+          type: 'appointment' 
+        });
+        console.log('✅ تم حذف التذكير');
+      } catch (err) {
+        console.error('خطأ في حذف التذكير:', err);
+      }
+    }
+
+    res.json({ 
+      success: true,
+      message: 'تم تحديث الموعد بنجاح',
+      appointment 
+    });
+  } catch (error) {
+    console.error('❌ خطأ في التحديث:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'خطأ في تحديث الموعد', 
+      error: error.message 
+    });
+  }
+});
+
+// ==========================================
+// Update appointment status (PATCH) - للتوافق
 // ==========================================
 router.patch('/:id', auth, async (req, res) => {
   try {

@@ -328,6 +328,28 @@
             margin: 0;
         }
 
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+#voiceBtn {
+    transition: all 0.2s ease !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#voiceBtn:active {
+    transform: scale(0.95) !important;
+}
+
+/* منع التحديد على الموبايل */
+#voiceBtn * {
+    pointer-events: none;
+}
+
     </style>
 </head>
 <body>

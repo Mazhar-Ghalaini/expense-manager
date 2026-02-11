@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ تم تحميل الصفحة');
     loadAppointments();
     initializeEventListeners();
-    initVoiceButton(); // ✅ استدعاء مباشر
+    initVoiceButton();
 });
 
 // ==========================================
@@ -46,6 +46,28 @@ function initializeEventListeners() {
 }
 
 // ==========================================
+// Toggle Sidebar
+// ==========================================
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar) sidebar.classList.toggle('active');
+    if (overlay) overlay.classList.toggle('active');
+}
+
+// ==========================================
+// Logout
+// ==========================================
+function logout() {
+    if (confirm('هل تريد تسجيل الخروج؟')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = 'index.html';
+    }
+}
+
+// ==========================================
 // 🎤 تفعيل نظام الضغط المطول
 // ==========================================
 function initVoiceButton() {
@@ -58,7 +80,6 @@ function initVoiceButton() {
     
     console.log('🎤 تفعيل زر التسجيل...');
 
-    // التحقق من الدعم
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         console.error('❌ المتصفح لا يدعم التسجيل');
@@ -68,21 +89,17 @@ function initVoiceButton() {
 
     console.log('✅ المتصفح يدعم التسجيل');
 
-    // إزالة onclick من HTML إن وجد
     voiceBtn.onclick = null;
     voiceBtn.removeAttribute('onclick');
 
-    // ✅ للموبايل: touch events
     voiceBtn.addEventListener('touchstart', handlePressStart, { passive: false });
     voiceBtn.addEventListener('touchend', handlePressEnd, { passive: false });
     voiceBtn.addEventListener('touchcancel', handlePressEnd, { passive: false });
 
-    // ✅ للكمبيوتر: mouse events
     voiceBtn.addEventListener('mousedown', handlePressStart);
     voiceBtn.addEventListener('mouseup', handlePressEnd);
     voiceBtn.addEventListener('mouseleave', handlePressEnd);
 
-    // تحديث النص
     voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> <span>اضغط مطولاً للتسجيل</span>';
 
     console.log('✅ تم تفعيل نظام الضغط المطول');
@@ -99,14 +116,12 @@ function handlePressStart(e) {
     
     isLongPress = false;
     
-    // تغيير شكل الزر
     const btn = document.getElementById('voiceBtn');
     if (btn) {
         btn.style.background = '#ff9800';
         btn.style.transform = 'scale(0.95)';
     }
     
-    // انتظار 200ms للتأكد من الضغط المطول
     pressTimer = setTimeout(() => {
         isLongPress = true;
         console.log('✅ ضغط مطول - بدء التسجيل');
@@ -115,7 +130,7 @@ function handlePressStart(e) {
 }
 
 // ==========================================
-// نهاية الضغط
+// نهاية الضغط - FIXED
 // ==========================================
 function handlePressEnd(e) {
     e.preventDefault();
@@ -123,23 +138,23 @@ function handlePressEnd(e) {
     
     console.log('👆 انتهى الضغط');
     
-    // إلغاء المؤقت
     if (pressTimer) {
         clearTimeout(pressTimer);
         pressTimer = null;
     }
     
-    // إرجاع شكل الزر
     const btn = document.getElementById('voiceBtn');
     if (btn) {
-        btn.style.background = '#4caf50';
         btn.style.transform = 'scale(1)';
     }
     
-    // إيقاف التسجيل إذا كان نشط
     if (isLongPress && isRecording) {
-        console.log('🛑 إيقاف التسجيل');
+        console.log('🛑 إيقاف التسجيل (رفع الإصبع)');
         stopRecordingLongPress();
+    } else if (!isRecording) {
+        if (btn) {
+            btn.style.background = '#4caf50';
+        }
     }
     
     isLongPress = false;
@@ -177,12 +192,10 @@ function startRecordingLongPress() {
             updateRecordingUI(true);
             startTimer();
             
-            // اهتزاز خفيف
             if (navigator.vibrate) {
                 navigator.vibrate(50);
             }
             
-            // إيقاف تلقائي بعد 30 ثانية
             recordingTimeout = setTimeout(() => {
                 console.log('⏱️ انتهى الوقت (30 ثانية)');
                 stopRecordingLongPress();
@@ -192,7 +205,6 @@ function startRecordingLongPress() {
         recognition.onresult = (event) => {
             console.log('📝 تلقي نتيجة...');
             
-            // جمع كل النتائج النهائية
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 if (event.results[i].isFinal) {
                     const text = event.results[i][0].transcript;
@@ -240,6 +252,7 @@ function startRecordingLongPress() {
             console.log('📝 النص الكامل:', finalText);
             
             isRecording = false;
+            isProcessing = false;
             updateRecordingUI(false);
             stopTimer();
             
@@ -248,13 +261,14 @@ function startRecordingLongPress() {
                 recordingTimeout = null;
             }
             
-            // معالجة النص
             if (finalText && finalText.trim()) {
                 setTimeout(() => {
                     processVoiceInput(finalText.trim());
                 }, 100);
             } else {
-                alert('🎤 لم يتم التعرف على أي كلام\nحاول مرة أخرى');
+                setTimeout(() => {
+                    alert('🎤 لم يتم التعرف على أي كلام\nحاول مرة أخرى');
+                }, 100);
             }
         };
         
@@ -269,7 +283,7 @@ function startRecordingLongPress() {
 }
 
 // ==========================================
-// إيقاف التسجيل
+// إيقاف التسجيل - FIXED
 // ==========================================
 function stopRecordingLongPress() {
     console.log('🛑 إيقاف التسجيل...');
@@ -277,13 +291,15 @@ function stopRecordingLongPress() {
     if (recognition) {
         try {
             recognition.stop();
+            console.log('✅ تم إيقاف recognition');
         } catch (e) {
-            console.log('Already stopped');
+            console.log('Already stopped:', e.message);
         }
     }
     
     isRecording = false;
-    updateRecordingUI(false);
+    isProcessing = false;
+    
     stopTimer();
     
     if (recordingTimeout) {
@@ -291,26 +307,36 @@ function stopRecordingLongPress() {
         recordingTimeout = null;
     }
     
+    updateRecordingUI(false);
+    
     if (navigator.vibrate) {
         navigator.vibrate(30);
     }
 }
 
 // ==========================================
-// تحديث الواجهة
+// تحديث الواجهة - FIXED
 // ==========================================
 function updateRecordingUI(recording) {
     const btn = document.getElementById('voiceBtn');
     const indicator = document.getElementById('recordingIndicator');
     
-    if (!btn) return;
+    if (!btn) {
+        console.error('❌ لم يتم العثور على الزر');
+        return;
+    }
+    
+    console.log('🎨 تحديث الواجهة - recording:', recording);
     
     if (recording) {
         btn.style.background = '#f44336';
+        btn.style.transition = 'all 0.2s ease';
         btn.innerHTML = '<i class="fas fa-circle" style="animation: pulse 1s infinite;"></i> <span>ارفع إصبعك للإيقاف</span>';
         if (indicator) indicator.style.display = 'flex';
     } else {
         btn.style.background = '#4caf50';
+        btn.style.transition = 'all 0.2s ease';
+        btn.style.transform = 'scale(1)';
         btn.innerHTML = '<i class="fas fa-microphone"></i> <span>اضغط مطولاً للتسجيل</span>';
         if (indicator) indicator.style.display = 'none';
     }
@@ -337,28 +363,6 @@ function stopTimer() {
         timerInterval = null;
     }
     recordingSeconds = 0;
-}
-
-// ==========================================
-// Toggle Sidebar
-// ==========================================
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    
-    if (sidebar) sidebar.classList.toggle('active');
-    if (overlay) overlay.classList.toggle('active');
-}
-
-// ==========================================
-// Logout
-// ==========================================
-function logout() {
-    if (confirm('هل تريد تسجيل الخروج؟')) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = 'index.html';
-    }
 }
 
 // ==========================================

@@ -3,7 +3,9 @@ const router = express.Router();
 const Expense = require('../models/Expense');
 const XLSX = require('xlsx');
 
-// استيراد auth middleware
+// ==========================================
+// Auth Middleware
+// ==========================================
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -28,41 +30,11 @@ const auth = async (req, res, next) => {
   }
 };
 
-// Get all expenses
-router.get('/', auth, async (req, res) => {
-  try {
-    const expenses = await Expense.find({ user: req.user._id }).sort('-date');
-    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    
-    res.json({
-      success: true,
-      count: expenses.length,
-      total,
-      expenses
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في جلب المصروفات' });
-  }
-});
+// ==========================================
+// ✅ Routes الخاصة يجب أن تأتي قبل /:id
+// ==========================================
 
-// Add expense
-router.post('/', auth, async (req, res) => {
-  try {
-    const expense = await Expense.create({
-      user: req.user._id,
-      ...req.body
-    });
-
-    res.status(201).json({
-      success: true,
-      expense
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في إضافة المصروف' });
-  }
-});
-
-// Export Excel - تحميل مباشر (للاستخدام من صفحة المصروفات)
+// Export Excel
 router.get('/export-excel', auth, async (req, res) => {
   try {
     const expenses = await Expense.find({ user: req.user._id }).sort('-date');
@@ -70,29 +42,59 @@ router.get('/export-excel', auth, async (req, res) => {
     if (expenses.length === 0) {
       return res.status(400).json({ 
         success: false,
-        message: 'لا توجد مصروفات' 
+        message: 'لا توجد مصروفات لتصديرها' 
       });
     }
 
     const wb = XLSX.utils.book_new();
     const wsData = [
-      ['التاريخ', 'المبلغ', 'الفئة', 'الوصف']
+      ['التاريخ', 'المبلغ', 'العملة', 'الفئة', 'الوصف']
     ];
 
     expenses.forEach(exp => {
+      const currency = exp.currency || { symbol: '€', name: 'يورو' };
       wsData.push([
-        new Date(exp.date).toLocaleDateString('ar-SA'),
+        new Date(exp.date).toLocaleDateString('en-GB'),
         exp.amount,
+        `${currency.symbol} ${currency.name}`,
         exp.category,
         exp.description || '-'
       ]);
     });
 
-    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    // ✅ حساب الإجمالي حسب كل عملة
+    const totalsByCurrency = {};
+    expenses.forEach(exp => {
+      const currency = exp.currency || { symbol: '€', name: 'يورو', code: 'EUR' };
+      const key = currency.code || 'EUR';
+      
+      if (!totalsByCurrency[key]) {
+        totalsByCurrency[key] = {
+          total: 0,
+          symbol: currency.symbol,
+          name: currency.name
+        };
+      }
+      totalsByCurrency[key].total += exp.amount;
+    });
+
     wsData.push([]);
-    wsData.push(['الإجمالي:', total]);
+    wsData.push(['الإجمالي حسب العملة:']);
+    
+    Object.values(totalsByCurrency).forEach(curr => {
+      wsData.push(['', curr.total, `${curr.symbol} ${curr.name}`]);
+    });
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    ws['!cols'] = [
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 30 }
+    ];
+    
     XLSX.utils.book_append_sheet(wb, ws, 'المصروفات');
 
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -103,11 +105,16 @@ router.get('/export-excel', auth, async (req, res) => {
     res.send(buffer);
 
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في تصدير الملف' });
+    console.error('Error exporting Excel:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في تصدير الملف',
+      error: error.message 
+    });
   }
 });
 
-// Export Excel - للاستخدام من AI (نفس الوظيفة مع route مختلف)
+// Export Excel - للاستخدام من AI
 router.get('/export', auth, async (req, res) => {
   try {
     const expenses = await Expense.find({ user: req.user._id }).sort('-date');
@@ -126,7 +133,7 @@ router.get('/export', auth, async (req, res) => {
 
     expenses.forEach(exp => {
       wsData.push([
-        new Date(exp.date).toLocaleDateString('ar-SA'),
+        new Date(exp.date).toLocaleDateString('en-GB'),
         `${exp.amount} يورو`,
         exp.category,
         exp.description || '-'
@@ -139,7 +146,6 @@ router.get('/export', auth, async (req, res) => {
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     
-    // تنسيق عرض الأعمدة
     ws['!cols'] = [
       { wch: 15 },
       { wch: 12 },
@@ -157,8 +163,12 @@ router.get('/export', auth, async (req, res) => {
     res.send(buffer);
 
   } catch (error) {
-    console.error('خطأ في تصدير Excel:', error);
-    res.status(500).json({ success: false, message: 'خطأ في تصدير الملف' });
+    console.error('Error exporting Excel:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في تصدير الملف',
+      error: error.message 
+    });
   }
 });
 
@@ -167,13 +177,35 @@ router.post('/voice', auth, async (req, res) => {
   try {
     const { text } = req.body;
     
-    const amountMatch = text.match(/\d+/);
-    const amount = amountMatch ? parseInt(amountMatch[0]) : 0;
+    if (!text || text.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'النص مطلوب'
+      });
+    }
+    
+    const amountMatch = text.match(/\d+\.?\d*/);
+    const amount = amountMatch ? parseFloat(amountMatch[0]) : 0;
     
     let category = 'أخرى';
-    if (text.includes('طعام') || text.includes('أكل')) category = 'طعام';
-    if (text.includes('نقل') || text.includes('مواصلات')) category = 'مواصلات';
-    if (text.includes('ترفيه')) category = 'ترفيه';
+    const categories = {
+      'طعام': ['طعام', 'أكل', 'غداء', 'عشاء', 'فطور', 'مطعم'],
+      'مواصلات': ['مواصلات', 'نقل', 'تاكسي', 'أوبر', 'باص', 'بنزين'],
+      'تسوق': ['تسوق', 'شراء', 'ملابس'],
+      'فواتير': ['فواتير', 'فاتورة', 'كهرباء', 'ماء'],
+      'ترفيه': ['ترفيه', 'سينما', 'ألعاب'],
+      'صحة': ['صحة', 'دواء', 'طبيب']
+    };
+    
+    for (const [cat, keywords] of Object.entries(categories)) {
+      for (const keyword of keywords) {
+        if (text.includes(keyword)) {
+          category = cat;
+          break;
+        }
+      }
+      if (category !== 'أخرى') break;
+    }
     
     if (amount > 0) {
       const expense = await Expense.create({
@@ -186,7 +218,7 @@ router.post('/voice', auth, async (req, res) => {
       
       res.json({
         success: true,
-        message: `تم إضافة ${amount} ريال`,
+        message: `تم إضافة ${amount} يورو`,
         expense: {
           amount: expense.amount,
           category: expense.category,
@@ -196,29 +228,246 @@ router.post('/voice', auth, async (req, res) => {
     } else {
       res.status(400).json({
         success: false,
-        message: 'لم أفهم المبلغ. حاول: صرفت 50 ريال على الطعام'
+        message: 'لم أفهم المبلغ. حاول: دفعت 50 يورو للطعام'
       });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في معالجة الأمر' });
+    console.error('Error processing voice command:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في معالجة الأمر',
+      error: error.message 
+    });
+  }
+});
+
+// ==========================================
+// ✅ Routes العامة تأتي بعد الخاصة
+// ==========================================
+
+// Get all expenses
+router.get('/', auth, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    let query = { user: req.user._id };
+    
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) {
+        query.date.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.date.$lte = end;
+      }
+    }
+    
+    const expenses = await Expense.find(query).sort('-date');
+    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    
+    res.json({
+      success: true,
+      count: expenses.length,
+      total,
+      expenses
+    });
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في جلب المصروفات',
+      error: error.message 
+    });
+  }
+});
+
+// Add expense
+router.post('/', auth, async (req, res) => {
+  try {
+    const { amount, category, date, description } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'المبلغ مطلوب ويجب أن يكون أكبر من صفر'
+      });
+    }
+    
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: 'الفئة مطلوبة'
+      });
+    }
+    
+    const expense = await Expense.create({
+      user: req.user._id,
+      amount,
+      category,
+      date: date || new Date(),
+      description: description || ''
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'تم إضافة المصروف بنجاح',
+      expense
+    });
+  } catch (error) {
+    console.error('Error adding expense:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في إضافة المصروف',
+      error: error.message 
+    });
+  }
+});
+
+// ==========================================
+// ✅ Get single expense by ID - يجب أن يكون هنا
+// ==========================================
+router.get('/:id', auth, async (req, res) => {
+  try {
+    console.log('📥 طلب الحصول على مصروف:', req.params.id);
+    
+    const expense = await Expense.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!expense) {
+      console.log('❌ المصروف غير موجود');
+      return res.status(404).json({
+        success: false,
+        message: 'المصروف غير موجود'
+      });
+    }
+
+    console.log('✅ تم العثور على المصروف:', expense);
+    
+    res.json({
+      success: true,
+      expense: expense
+    });
+  } catch (error) {
+    console.error('❌ خطأ في الحصول على المصروف:', error);
+    
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({
+        success: false,
+        message: 'معرف المصروف غير صحيح'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'خطأ في الخادم',
+      error: error.message
+    });
+  }
+});
+
+// Update expense
+router.put('/:id', auth, async (req, res) => {
+  try {
+    console.log('📝 طلب تحديث مصروف:', req.params.id);
+    console.log('📦 البيانات:', req.body);
+    
+    const { amount, category, date, description } = req.body;
+    
+    if (amount !== undefined && amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'المبلغ يجب أن يكون أكبر من صفر'
+      });
+    }
+    
+    const expense = await Expense.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      {
+        amount,
+        category,
+        date,
+        description
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!expense) {
+      console.log('❌ المصروف غير موجود');
+      return res.status(404).json({ 
+        success: false, 
+        message: 'المصروف غير موجود' 
+      });
+    }
+
+    console.log('✅ تم التحديث بنجاح:', expense);
+    
+    res.json({ 
+      success: true,
+      message: 'تم تحديث المصروف بنجاح',
+      expense 
+    });
+  } catch (error) {
+    console.error('❌ خطأ في التحديث:', error);
+    
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({
+        success: false,
+        message: 'معرف المصروف غير صحيح'
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في تحديث المصروف',
+      error: error.message 
+    });
   }
 });
 
 // Delete expense
 router.delete('/:id', auth, async (req, res) => {
   try {
+    console.log('🗑️ طلب حذف مصروف:', req.params.id);
+    
     const expense = await Expense.findOneAndDelete({
       _id: req.params.id,
       user: req.user._id
     });
 
     if (!expense) {
-      return res.status(404).json({ success: false, message: 'المصروف غير موجود' });
+      console.log('❌ المصروف غير موجود');
+      return res.status(404).json({ 
+        success: false, 
+        message: 'المصروف غير موجود' 
+      });
     }
 
-    res.json({ success: true, message: 'تم حذف المصروف' });
+    console.log('✅ تم الحذف بنجاح');
+    
+    res.json({ 
+      success: true, 
+      message: 'تم حذف المصروف بنجاح',
+      deletedExpense: expense
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في حذف المصروف' });
+    console.error('❌ خطأ في الحذف:', error);
+    
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({
+        success: false,
+        message: 'معرف المصروف غير صحيح'
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في حذف المصروف',
+      error: error.message 
+    });
   }
 });
 

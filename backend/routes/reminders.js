@@ -4,8 +4,37 @@ const { auth } = require('../middleware/auth');
 const Reminder = require('../models/Reminder');
 
 // ==========================================
-// GET /api/reminders - جلب جميع التذكيرات
+// ✅ Routes الخاصة أولاً
 // ==========================================
+
+// GET /api/reminders/stats - إحصائيات التذكيرات
+router.get('/stats', auth, async (req, res) => {
+    try {
+        const total = await Reminder.countDocuments({ user: req.user._id });
+        const completed = await Reminder.countDocuments({ user: req.user._id, completed: true });
+        const pending = await Reminder.countDocuments({ 
+            user: req.user._id, 
+            completed: false
+        });
+        
+        res.json({
+            success: true,
+            stats: {
+                total,
+                completed,
+                pending
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'خطأ في جلب الإحصائيات'
+        });
+    }
+});
+
+// GET /api/reminders - جلب جميع التذكيرات
 router.get('/', auth, async (req, res) => {
     try {
         const { status } = req.query;
@@ -14,18 +43,14 @@ router.get('/', auth, async (req, res) => {
         if (status && status !== 'all') {
             if (status === 'completed') {
                 query.completed = true;
-            } else if (status === 'pending') {
+            } else if (status === 'active') {
                 query.completed = false;
-                query.date = { $gte: new Date() };
-            } else if (status === 'overdue') {
-                query.completed = false;
-                query.date = { $lt: new Date() };
             }
         }
         
         const reminders = await Reminder.find(query)
-            .sort({ date: 1, time: 1 })
-            .populate('relatedId', 'title');
+            .sort({ date: -1, time: -1 })
+            .lean();
         
         res.json({
             success: true,
@@ -42,9 +67,7 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// ==========================================
 // POST /api/reminders - إضافة تذكير جديد
-// ==========================================
 router.post('/', auth, async (req, res) => {
     try {
         const { 
@@ -55,15 +78,22 @@ router.post('/', auth, async (req, res) => {
             timezone, 
             reminderEnabled, 
             reminderEmail,
-            sendEmail, 
-            sendWhatsapp, 
-            email, 
-            whatsapp, 
-            priority 
+            priority,
+            reminderDate // من التسجيل الصوتي
         } = req.body;
         
+        // التعامل مع التاريخ من التسجيل الصوتي
+        let finalDate = date;
+        let finalTime = time;
+        
+        if (reminderDate) {
+            const dateObj = new Date(reminderDate);
+            finalDate = dateObj.toISOString().split('T')[0];
+            finalTime = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+        }
+        
         // التحقق من البيانات الأساسية
-        if (!title || !date || !time) {
+        if (!title || !finalDate || !finalTime) {
             return res.status(400).json({
                 success: false,
                 message: 'العنوان والتاريخ والوقت مطلوبة'
@@ -78,20 +108,17 @@ router.post('/', auth, async (req, res) => {
             });
         }
         
-        // التوافق مع الكود القديم
-        const finalEmail = reminderEmail || (sendEmail ? email : null);
-        
         const newReminder = await Reminder.create({
             user: req.user._id,
             title,
-            description,
-            date,
-            time,
+            description: description || '',
+            date: finalDate,
+            time: finalTime,
             timezone: timezone || 'Europe/Berlin',
             reminderEnabled: reminderEnabled || false,
-            reminderEmail: finalEmail,
+            reminderEmail: reminderEnabled ? reminderEmail : null,
+            priority: priority || 'متوسط',
             type: 'custom',
-            email: finalEmail, // للتوافق مع الكود القديم
             completed: false
         });
         
@@ -111,34 +138,105 @@ router.post('/', auth, async (req, res) => {
 });
 
 // ==========================================
-// PUT /api/reminders/:id - تحديث تذكير
+// ✅ Routes مع :id (بعد الـ routes الخاصة)
 // ==========================================
+
+// GET /api/reminders/:id - جلب تذكير واحد
+router.get('/:id', auth, async (req, res) => {
+    try {
+        console.log('📥 GET reminder:', req.params.id);
+        
+        const reminder = await Reminder.findOne({
+            _id: req.params.id,
+            user: req.user._id
+        }).lean();
+
+        if (!reminder) {
+            console.log('❌ التذكير غير موجود');
+            return res.status(404).json({
+                success: false,
+                message: 'التذكير غير موجود'
+            });
+        }
+
+        console.log('✅ تم العثور على التذكير:', reminder);
+        
+        res.json({
+            success: true,
+            reminder: reminder
+        });
+    } catch (error) {
+        console.error('❌ Error:', error);
+        
+        if (error.kind === 'ObjectId') {
+            return res.status(400).json({
+                success: false,
+                message: 'معرف التذكير غير صحيح'
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: 'خطأ في الخادم',
+            error: error.message
+        });
+    }
+});
+
+// PUT /api/reminders/:id - تحديث تذكير
 router.put('/:id', auth, async (req, res) => {
     try {
+        console.log('📝 UPDATE reminder:', req.params.id);
+        console.log('📦 Data:', req.body);
+        
+        const { 
+            title, 
+            description, 
+            date, 
+            time, 
+            timezone, 
+            reminderEnabled, 
+            reminderEmail,
+            priority,
+            reminderDate // من التسجيل الصوتي
+        } = req.body;
+        
         const reminder = await Reminder.findOne({
             _id: req.params.id,
             user: req.user._id
         });
         
         if (!reminder) {
+            console.log('❌ التذكير غير موجود');
             return res.status(404).json({
                 success: false,
                 message: 'التذكير غير موجود'
             });
         }
         
-        const { title, description, date, time, timezone, reminderEnabled, reminderEmail, email } = req.body;
+        // التعامل مع التاريخ من التسجيل الصوتي
+        let finalDate = date;
+        let finalTime = time;
         
-        reminder.title = title || reminder.title;
-        reminder.description = description !== undefined ? description : reminder.description;
-        reminder.date = date || reminder.date;
-        reminder.time = time || reminder.time;
-        reminder.timezone = timezone || reminder.timezone;
-        reminder.reminderEnabled = reminderEnabled !== undefined ? reminderEnabled : reminder.reminderEnabled;
-        reminder.reminderEmail = reminderEmail !== undefined ? reminderEmail : reminder.reminderEmail;
-        reminder.email = reminderEmail !== undefined ? reminderEmail : (email !== undefined ? email : reminder.email);
+        if (reminderDate) {
+            const dateObj = new Date(reminderDate);
+            finalDate = dateObj.toISOString().split('T')[0];
+            finalTime = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+        }
+        
+        // تحديث الحقول
+        if (title !== undefined) reminder.title = title;
+        if (description !== undefined) reminder.description = description;
+        if (finalDate !== undefined) reminder.date = finalDate;
+        if (finalTime !== undefined) reminder.time = finalTime;
+        if (timezone !== undefined) reminder.timezone = timezone;
+        if (priority !== undefined) reminder.priority = priority;
+        if (reminderEnabled !== undefined) reminder.reminderEnabled = reminderEnabled;
+        if (reminderEmail !== undefined) reminder.reminderEmail = reminderEmail;
         
         await reminder.save();
+        
+        console.log('✅ تم التحديث بنجاح');
         
         res.json({
             success: true,
@@ -146,7 +244,15 @@ router.put('/:id', auth, async (req, res) => {
             reminder
         });
     } catch (error) {
-        console.error('Error updating reminder:', error);
+        console.error('❌ Error:', error);
+        
+        if (error.kind === 'ObjectId') {
+            return res.status(400).json({
+                success: false,
+                message: 'معرف التذكير غير صحيح'
+            });
+        }
+        
         res.status(500).json({
             success: false,
             message: 'خطأ في تحديث التذكير',
@@ -155,29 +261,40 @@ router.put('/:id', auth, async (req, res) => {
     }
 });
 
-// ==========================================
 // DELETE /api/reminders/:id - حذف تذكير
-// ==========================================
 router.delete('/:id', auth, async (req, res) => {
     try {
+        console.log('🗑️ DELETE reminder:', req.params.id);
+        
         const reminder = await Reminder.findOneAndDelete({
             _id: req.params.id,
             user: req.user._id
         });
         
         if (!reminder) {
+            console.log('❌ التذكير غير موجود');
             return res.status(404).json({
                 success: false,
                 message: 'التذكير غير موجود'
             });
         }
         
+        console.log('✅ تم الحذف بنجاح');
+        
         res.json({
             success: true,
             message: 'تم حذف التذكير بنجاح'
         });
     } catch (error) {
-        console.error('Error deleting reminder:', error);
+        console.error('❌ Error:', error);
+        
+        if (error.kind === 'ObjectId') {
+            return res.status(400).json({
+                success: false,
+                message: 'معرف التذكير غير صحيح'
+            });
+        }
+        
         res.status(500).json({
             success: false,
             message: 'خطأ في حذف التذكير',
@@ -186,11 +303,11 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
-// ==========================================
 // PATCH /api/reminders/:id/complete - تحديد كمكتمل
-// ==========================================
 router.patch('/:id/complete', auth, async (req, res) => {
     try {
+        console.log('✅ COMPLETE reminder:', req.params.id);
+        
         const reminder = await Reminder.findOne({
             _id: req.params.id,
             user: req.user._id
@@ -212,107 +329,11 @@ router.patch('/:id/complete', auth, async (req, res) => {
             reminder
         });
     } catch (error) {
-        console.error('Error completing reminder:', error);
+        console.error('❌ Error:', error);
         res.status(500).json({
             success: false,
             message: 'خطأ في تحديث التذكير',
             error: error.message
-        });
-    }
-});
-
-// ==========================================
-// POST /api/reminders/:id/send - إرسال تذكير فوراً
-// ==========================================
-router.post('/:id/send', auth, async (req, res) => {
-    try {
-        const reminder = await Reminder.findOne({
-            _id: req.params.id,
-            user: req.user._id
-        });
-        
-        if (!reminder) {
-            return res.status(404).json({
-                success: false,
-                message: 'التذكير غير موجود'
-            });
-        }
-        
-        const emailToSend = reminder.reminderEmail || reminder.email;
-        
-        if (!emailToSend) {
-            return res.status(400).json({
-                success: false,
-                message: 'لا يوجد بريد إلكتروني لهذا التذكير'
-            });
-        }
-        
-        console.log('📧 إرسال تذكير إلى:', emailToSend);
-        console.log('📝 العنوان:', reminder.title);
-        console.log('📅 التاريخ:', reminder.date);
-        console.log('🕐 الوقت:', reminder.time);
-        console.log('🌍 المنطقة الزمنية:', reminder.timezone || 'Europe/Berlin');
-        
-        reminder.completed = true;
-        await reminder.save();
-        
-        await Reminder.create({
-            user: req.user._id,
-            title: `✅ تم إرسال: ${reminder.title}`,
-            description: `تم إرسال التذكير إلى ${emailToSend}`,
-            date: new Date(),
-            time: new Date().toTimeString().split(' ')[0].substring(0, 5),
-            timezone: reminder.timezone || 'Europe/Berlin',
-            type: 'custom',
-            completed: true
-        });
-        
-        res.json({
-            success: true,
-            message: `تم إرسال التذكير إلى ${emailToSend}`,
-            reminder
-        });
-    } catch (error) {
-        console.error('Error sending reminder:', error);
-        res.status(500).json({
-            success: false,
-            message: 'خطأ في إرسال التذكير',
-            error: error.message
-        });
-    }
-});
-
-// ==========================================
-// GET /api/reminders/stats - إحصائيات التذكيرات
-// ==========================================
-router.get('/stats', auth, async (req, res) => {
-    try {
-        const total = await Reminder.countDocuments({ user: req.user._id });
-        const completed = await Reminder.countDocuments({ user: req.user._id, completed: true });
-        const pending = await Reminder.countDocuments({ 
-            user: req.user._id, 
-            completed: false,
-            date: { $gte: new Date() }
-        });
-        const overdue = await Reminder.countDocuments({ 
-            user: req.user._id, 
-            completed: false,
-            date: { $lt: new Date() }
-        });
-        
-        res.json({
-            success: true,
-            stats: {
-                total,
-                completed,
-                pending,
-                overdue
-            }
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'خطأ في جلب الإحصائيات'
         });
     }
 });

@@ -15,7 +15,7 @@ const reminderSchema = new mongoose.Schema({
     default: ''
   },
   date: {
-    type: Date,
+    type: String, // ✅ تغيير إلى String لتجنب مشاكل التاريخ
     required: true
   },
   time: {
@@ -26,12 +26,18 @@ const reminderSchema = new mongoose.Schema({
     type: String,
     default: 'Europe/Berlin'
   },
+  priority: {
+    type: String,
+    enum: ['منخفض', 'متوسط', 'عالي'],
+    default: 'متوسط'
+  },
   reminderEnabled: {
     type: Boolean,
     default: false
   },
   reminderEmail: {
-    type: String
+    type: String,
+    default: null
   },
   type: {
     type: String,
@@ -42,9 +48,6 @@ const reminderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Appointment'
   },
-  email: {
-    type: String
-  },
   completed: {
     type: Boolean,
     default: false
@@ -52,5 +55,9 @@ const reminderSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// ✅ Index للأداء
+reminderSchema.index({ user: 1, date: -1 });
+reminderSchema.index({ user: 1, completed: 1 });
 
 module.exports = mongoose.model('Reminder', reminderSchema);

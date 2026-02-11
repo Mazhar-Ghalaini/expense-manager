@@ -6,12 +6,16 @@ let isRecording = false;
 let recordingTimeout = null;
 let timerInterval = null;
 let recordingSeconds = 0;
-let isProcessing = false; // ✅ NEW: منع التنفيذ المتكرر
+let isProcessing = false;
+let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 // ==========================================
 // التهيئة عند تحميل الصفحة
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 الجهاز:', isIOS ? 'iOS' : 'Other');
+    console.log('🌐 المتصفح:', isSafari ? 'Safari' : 'Other');
     loadAppointments();
     initializeEventListeners();
 });
@@ -45,6 +49,9 @@ function initializeEventListeners() {
     });
 }
 
+// ==========================================
+// Toggle Sidebar
+// ==========================================
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -53,6 +60,9 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle('active');
 }
 
+// ==========================================
+// Logout
+// ==========================================
 function logout() {
     if (confirm('هل تريد تسجيل الخروج؟')) {
         localStorage.removeItem('token');
@@ -61,6 +71,9 @@ function logout() {
     }
 }
 
+// ==========================================
+// تبديل حقل البريد الإلكتروني
+// ==========================================
 async function toggleReminderEmail() {
     const checkbox = document.getElementById('enableReminder');
     const emailField = document.getElementById('emailField');
@@ -83,6 +96,9 @@ async function toggleReminderEmail() {
     }
 }
 
+// ==========================================
+// إضافة موعد (من النموذج)
+// ==========================================
 async function handleAppointmentSubmit(e) {
     e.preventDefault();
     
@@ -125,6 +141,9 @@ async function handleAppointmentSubmit(e) {
     }
 }
 
+// ==========================================
+// تحميل المواعيد
+// ==========================================
 async function loadAppointments() {
     try {
         const token = localStorage.getItem('token');
@@ -141,6 +160,9 @@ async function loadAppointments() {
     }
 }
 
+// ==========================================
+// عرض المواعيد
+// ==========================================
 function displayAppointments(appointments) {
     const container = document.getElementById('appointmentsList');
     
@@ -191,6 +213,9 @@ function displayAppointments(appointments) {
     container.innerHTML = html;
 }
 
+// ==========================================
+// حذف موعد
+// ==========================================
 async function deleteAppointment(id) {
     if (!confirm('هل تريد حذف هذا الموعد؟')) return;
     
@@ -214,6 +239,9 @@ async function deleteAppointment(id) {
     }
 }
 
+// ==========================================
+// إرسال تذكير بالبريد
+// ==========================================
 async function sendEmailReminder(id) {
     try {
         const token = localStorage.getItem('token');
@@ -235,165 +263,180 @@ async function sendEmailReminder(id) {
 }
 
 // ==========================================
-// 🎤 التسجيل الصوتي - FIXED COMPLETELY
+// 🎤 التسجيل الصوتي - iPhone Compatible
 // ==========================================
 function toggleVoiceAppointment() {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('❌ المتصفح لا يدعم التسجيل الصوتي\nاستخدم Chrome أو Edge');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        let msg = '❌ المتصفح لا يدعم التسجيل الصوتي';
+        if (isIOS) {
+            msg += '\n\n✅ تأكد من:\n- استخدام Safari\n- iOS 14.5+\n- تفعيل Siri في الإعدادات';
+        }
+        alert(msg);
         return;
     }
     
     if (isRecording) {
-        console.log('🛑 المستخدم أوقف التسجيل يدوياً');
+        console.log('🛑 إيقاف يدوي');
         forceStopRecording();
     } else {
-        startRecording();
+        console.log('🎤 بدء التسجيل...');
+        startRecordingIOS();
     }
 }
 
-function startRecording() {
-    console.log('🎤 محاولة بدء التسجيل...');
-    
-    // ✅ تنظيف كامل
+// ==========================================
+// بدء التسجيل - iOS Compatible
+// ==========================================
+function startRecordingIOS() {
     forceStopRecording();
     
-    // انتظار 100ms قبل البدء (للتأكد من الإيقاف الكامل)
     setTimeout(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        
-        recognition.lang = 'ar-SA';
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        
-        let hasResult = false; // ✅ NEW: تتبع النتائج
-        
-        recognition.onstart = () => {
-            isRecording = true;
-            isProcessing = false;
-            hasResult = false;
-            recordingSeconds = 0;
-            
-            console.log('✅ بدأ التسجيل');
-            updateRecordingUI(true);
-            startTimer();
-            
-            // إيقاف تلقائي بعد 15 ثانية
-            recordingTimeout = setTimeout(() => {
-                console.log('⏱️ انتهى الوقت (15 ثانية)');
-                forceStopRecording();
-                if (!hasResult) {
-                    alert('⏱️ انتهى وقت التسجيل. لم يتم اكتشاف صوت.');
-                }
-            }, 15000);
-        };
-        
-        recognition.onresult = (event) => {
-            if (hasResult || isProcessing) {
-                console.log('⚠️ تم تجاهل نتيجة مكررة');
-                return;
-            }
-            
-            hasResult = true;
-            isProcessing = true;
-            
-            const text = event.results[0][0].transcript;
-            const confidence = event.results[0][0].confidence;
-            
-            console.log('✅ النص:', text);
-            console.log('📊 الدقة:', (confidence * 100).toFixed(1) + '%');
-            
-            // إيقاف فوري
-            forceStopRecording();
-            
-            // معالجة النص
-            setTimeout(() => {
-                processVoiceInput(text);
-                isProcessing = false;
-            }, 100);
-        };
-        
-        recognition.onerror = (event) => {
-            console.error('❌ خطأ:', event.error);
-            
-            forceStopRecording();
-            
-            // عدم إظهار رسالة للأخطاء الطبيعية
-            if (event.error === 'aborted' || event.error === 'no-speech') {
-                return;
-            }
-            
-            let errorMsg = '';
-            switch(event.error) {
-                case 'audio-capture':
-                    errorMsg = 'لا يمكن الوصول للميكروفون';
-                    break;
-                case 'not-allowed':
-                    errorMsg = 'يجب السماح باستخدام الميكروفون';
-                    break;
-                case 'network':
-                    errorMsg = 'مشكلة في الاتصال بالإنترنت';
-                    break;
-                default:
-                    errorMsg = 'خطأ في التسجيل: ' + event.error;
-            }
-            
-            if (errorMsg) {
-                alert('❌ ' + errorMsg);
-            }
-        };
-        
-        recognition.onend = () => {
-            console.log('🔚 انتهى التسجيل');
-            
-            // التأكد من الإيقاف الكامل
-            if (isRecording) {
-                forceStopRecording();
-            }
-        };
-        
         try {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.lang = 'ar-SA';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            
+            let hasResult = false;
+            
+            recognition.onstart = () => {
+                console.log('✅ بدأ التسجيل');
+                isRecording = true;
+                isProcessing = false;
+                hasResult = false;
+                recordingSeconds = 0;
+                
+                updateRecordingUI(true);
+                startTimer();
+                
+                recordingTimeout = setTimeout(() => {
+                    console.log('⏱️ انتهى الوقت');
+                    if (!hasResult) {
+                        forceStopRecording();
+                        alert('⏱️ انتهى وقت التسجيل (20 ثانية)');
+                    }
+                }, 20000);
+            };
+            
+            recognition.onresult = (event) => {
+                if (hasResult || isProcessing) {
+                    console.log('⚠️ تجاهل نتيجة مكررة');
+                    return;
+                }
+                
+                hasResult = true;
+                isProcessing = true;
+                
+                const text = event.results[0][0].transcript;
+                const confidence = event.results[0][0].confidence;
+                
+                console.log('✅ النص:', text);
+                console.log('📊 الثقة:', (confidence * 100).toFixed(1) + '%');
+                
+                forceStopRecording();
+                
+                setTimeout(() => {
+                    processVoiceInput(text);
+                    isProcessing = false;
+                }, isIOS ? 200 : 100);
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('❌ خطأ:', event.error);
+                
+                forceStopRecording();
+                
+                if (event.error === 'aborted') {
+                    console.log('ℹ️ تم الإلغاء');
+                    return;
+                }
+                
+                if (event.error === 'no-speech') {
+                    console.log('ℹ️ لم يتم اكتشاف صوت');
+                    alert('🎤 لم يتم اكتشاف صوت\nحاول مرة أخرى');
+                    return;
+                }
+                
+                let errorMsg = '';
+                switch(event.error) {
+                    case 'not-allowed':
+                        if (isIOS) {
+                            errorMsg = '🚫 يجب السماح بالميكروفون\n\nالإعدادات → Safari → الميكروفون';
+                        } else {
+                            errorMsg = '🚫 يجب السماح باستخدام الميكروفون';
+                        }
+                        break;
+                    case 'audio-capture':
+                        errorMsg = '🎤 لا يمكن الوصول للميكروفون';
+                        break;
+                    case 'network':
+                        errorMsg = '📡 مشكلة في الاتصال بالإنترنت';
+                        break;
+                    case 'service-not-allowed':
+                        errorMsg = '🚫 خدمة التعرف غير مفعلة\n\nتأكد من تفعيل Siri';
+                        break;
+                    default:
+                        errorMsg = '❌ خطأ: ' + event.error;
+                }
+                
+                if (errorMsg) {
+                    alert(errorMsg);
+                }
+            };
+            
+            recognition.onend = () => {
+                console.log('🔚 انتهى التسجيل');
+                setTimeout(() => {
+                    if (isRecording) {
+                        forceStopRecording();
+                    }
+                }, 100);
+            };
+            
+            console.log('🚀 بدء التسجيل...');
             recognition.start();
-            console.log('🚀 تم استدعاء start()');
+            
         } catch (error) {
-            console.error('❌ فشل start():', error);
+            console.error('❌ خطأ:', error);
             forceStopRecording();
-            alert('❌ لا يمكن بدء التسجيل. حاول مرة أخرى.');
+            alert('❌ خطأ: ' + error.message);
         }
-        
-    }, 100);
+    }, isIOS ? 50 : 100);
 }
 
-// ✅ إيقاف قسري كامل
+// ==========================================
+// إيقاف قسري
+// ==========================================
 function forceStopRecording() {
-    console.log('🛑 إيقاف قسري...');
+    console.log('🛑 إيقاف كامل');
     
     isRecording = false;
     isProcessing = false;
     
-    // إيقاف العداد
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
     }
     
-    // إيقاف المؤقت
     if (recordingTimeout) {
         clearTimeout(recordingTimeout);
         recordingTimeout = null;
     }
     
-    // إيقاف recognition
     if (recognition) {
         try {
-            recognition.abort(); // ✅ abort بدلاً من stop
+            recognition.abort();
             recognition.onstart = null;
             recognition.onend = null;
             recognition.onresult = null;
             recognition.onerror = null;
         } catch (e) {
-            console.log('Recognition already stopped');
+            console.log('Already stopped');
         }
         recognition = null;
     }
@@ -402,6 +445,9 @@ function forceStopRecording() {
     updateRecordingUI(false);
 }
 
+// ==========================================
+// تحديث الواجهة
+// ==========================================
 function updateRecordingUI(recording) {
     const btn = document.getElementById('voiceBtn');
     const indicator = document.getElementById('recordingIndicator');
@@ -410,16 +456,21 @@ function updateRecordingUI(recording) {
     
     if (recording) {
         btn.style.background = '#f44336';
-        btn.innerHTML = '<i class="fas fa-stop"></i> <span>إيقاف التسجيل</span>';
+        btn.innerHTML = '<i class="fas fa-stop"></i> <span>إيقاف</span>';
         if (indicator) indicator.style.display = 'flex';
     } else {
         btn.style.background = '#4caf50';
-        btn.innerHTML = '<i class="fas fa-microphone"></i> <span>اضافة موعد من خلال تسجيل صوتي</span>';
+        btn.innerHTML = '<i class="fas fa-microphone"></i> <span>تسجيل صوتي</span>';
         if (indicator) indicator.style.display = 'none';
     }
 }
 
+// ==========================================
+// العداد
+// ==========================================
 function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    
     timerInterval = setInterval(() => {
         recordingSeconds++;
         const timerEl = document.getElementById('recordingTimer');
@@ -430,22 +481,25 @@ function startTimer() {
 }
 
 // ==========================================
-// معالجة النص المُدخل
+// معالجة النص
 // ==========================================
 function processVoiceInput(text) {
-    console.log('🔄 معالجة النص:', text);
+    console.log('🔄 معالجة:', text);
     
     const extractedData = parseVoiceToAppointment(text);
     
     if (extractedData) {
         showAppointmentConfirmModal(extractedData, text);
     } else {
-        alert('❌ لم أتمكن من فهم الموعد.\n\nمثال صحيح:\n"موعد غداً الساعة 3 ظهراً مع أحمد"');
+        alert('❌ لم أفهم الموعد\n\n✅ مثال:\n"موعد غداً الساعة 3 ظهراً مع أحمد"');
     }
 }
 
+// ==========================================
+// استخراج البيانات من النص
+// ==========================================
 function parseVoiceToAppointment(text) {
-    console.log('🔍 تحليل النص:', text);
+    console.log('🔍 تحليل:', text);
     
     const result = {
         title: '',
@@ -564,10 +618,13 @@ function parseVoiceToAppointment(text) {
         return null;
     }
     
-    console.log('✅ البيانات المستخرجة:', result);
+    console.log('✅ النتيجة:', result);
     return result;
 }
 
+// ==========================================
+// نافذة التأكيد
+// ==========================================
 function showAppointmentConfirmModal(appointmentData, originalText) {
     const modal = document.createElement('div');
     modal.id = 'confirmModal';
@@ -612,6 +669,7 @@ function showAppointmentConfirmModal(appointmentData, originalText) {
                         <option value="Asia/Riyadh">الرياض (GMT+3)</option>
                         <option value="Asia/Dubai">دبي (GMT+4)</option>
                         <option value="Africa/Cairo">القاهرة (GMT+2)</option>
+                        <option value="Asia/Kuwait">الكويت (GMT+3)</option>
                     </select>
                 </div>
                 
@@ -663,6 +721,9 @@ function showAppointmentConfirmModal(appointmentData, originalText) {
     };
 }
 
+// ==========================================
+// حفظ الموعد
+// ==========================================
 async function saveConfirmedAppointment(modal) {
     const finalData = {
         title: modal.querySelector('#confirmTitle').value,
@@ -702,6 +763,9 @@ async function saveConfirmedAppointment(modal) {
     }
 }
 
+// ==========================================
+// تعديل موعد
+// ==========================================
 async function editAppointment(id) {
     try {
         const token = localStorage.getItem('token');
@@ -821,6 +885,9 @@ async function editAppointment(id) {
     }
 }
 
+// ==========================================
+// جلب البريد الإلكتروني
+// ==========================================
 async function getUserEmail() {
     try {
         const token = localStorage.getItem('token');

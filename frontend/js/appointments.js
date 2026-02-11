@@ -19,25 +19,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Event Listeners
 // ==========================================
 function initializeEventListeners() {
-    // نموذج إضافة موعد
     const form = document.getElementById('appointmentForm');
     if (form) {
         form.addEventListener('submit', handleAppointmentSubmit);
     }
     
-    // زر التسجيل الصوتي
     const voiceBtn = document.getElementById('voiceBtn');
     if (voiceBtn) {
         voiceBtn.addEventListener('click', toggleVoiceAppointment);
     }
     
-    // checkbox التذكير
     const reminderCheckbox = document.getElementById('enableReminder');
     if (reminderCheckbox) {
         reminderCheckbox.addEventListener('change', toggleReminderEmail);
     }
     
-    // إغلاق Sidebar على الموبايل
     const menuItems = document.querySelectorAll('.menu-item');
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
@@ -82,7 +78,6 @@ async function toggleReminderEmail() {
         emailField.style.display = 'block';
         emailInput.required = true;
         
-        // ملء الإيميل تلقائياً من الحساب
         if (!emailInput.value) {
             const userEmail = await getUserEmail();
             if (userEmail) {
@@ -95,6 +90,7 @@ async function toggleReminderEmail() {
         emailInput.value = '';
     }
 }
+
 // ==========================================
 // إضافة موعد (من النموذج)
 // ==========================================
@@ -206,6 +202,7 @@ function displayAppointments(appointments) {
     
     container.innerHTML = html;
 }
+
 // ==========================================
 // حذف موعد
 // ==========================================
@@ -256,10 +253,9 @@ async function sendEmailReminder(id) {
 }
 
 // ==========================================
-// التسجيل الصوتي - Toggle
+// 🎤 التسجيل الصوتي - UPDATED
 // ==========================================
 function toggleVoiceAppointment() {
-    // التحقق من دعم المتصفح
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
         alert('❌ المتصفح لا يدعم التسجيل الصوتي\nاستخدم Chrome أو Edge');
         return;
@@ -276,58 +272,56 @@ function toggleVoiceAppointment() {
 // بدء التسجيل
 // ==========================================
 function startRecording() {
-    // إنشاء كائن جديد في كل مرة
     if (recognition) {
         try {
             recognition.stop();
-        } catch (e) {
-            console.log('Cleaning up old recognition');
-        }
+        } catch (e) {}
         recognition = null;
     }
     
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
+    
     recognition.lang = 'ar-SA';
     recognition.continuous = false;
     recognition.interimResults = false;
     
-    // عند بدء التسجيل
     recognition.onstart = () => {
         isRecording = true;
         recordingSeconds = 0;
-        
         console.log('🎤 بدأ التسجيل الصوتي');
-        
-        // تحديث UI
         updateRecordingUI(true);
-        
-        // بدء العداد
         startTimer();
         
-        // إيقاف تلقائي بعد 15 ثانية
         recordingTimeout = setTimeout(() => {
-            console.log('⏱️ انتهى وقت التسجيل (15 ثانية)');
+            console.log('⏱️ انتهى وقت التسجيل');
             stopRecording();
-            alert('⏱️ تم إيقاف التسجيل تلقائياً بعد 15 ثانية');
-        }, 15000);
+            alert('⏱️ تم إيقاف التسجيل تلقائياً بعد 20 ثانية');
+        }, 20000);
     };
     
-    // عند التعرف على الصوت
     recognition.onresult = async (event) => {
         const text = event.results[0][0].transcript;
         console.log('✅ تم التعرف على:', text);
-        
-        // إيقاف التسجيل
         stopRecording();
         
-        // إضافة الموعد
-        await addVoiceAppointment(text);
+        // استخراج البيانات محلياً
+        const extractedData = parseVoiceToAppointment(text);
+        
+        if (extractedData) {
+            // عرض نافذة التأكيد
+            showAppointmentConfirmModal(extractedData, text);
+        } else {
+            alert('❌ لم أتمكن من فهم الموعد. حاول مرة أخرى.\n\nمثال: "موعد غداً الساعة 3 ظهراً مع أحمد"');
+        }
     };
     
-    // عند حدوث خطأ
     recognition.onerror = (event) => {
         console.error('❌ خطأ في التسجيل:', event.error);
+        
+        if (event.error === 'aborted' && !isRecording) {
+            return;
+        }
         
         let errorMsg = 'خطأ في التسجيل';
         switch(event.error) {
@@ -349,15 +343,13 @@ function startRecording() {
         stopRecording();
     };
     
-    // عند انتهاء التسجيل
     recognition.onend = () => {
         if (isRecording) {
-            console.log('🛑 انتهى التسجيل تلقائياً');
+            console.log('🛑 انتهى التسجيل');
             stopRecording();
         }
     };
     
-    // بدء التسجيل
     try {
         recognition.start();
     } catch (error) {
@@ -372,26 +364,19 @@ function startRecording() {
 // ==========================================
 function stopRecording() {
     isRecording = false;
-    
-    // إيقاف العداد
     stopTimer();
     
-    // إيقاف المؤقت التلقائي
     if (recordingTimeout) {
         clearTimeout(recordingTimeout);
         recordingTimeout = null;
     }
     
-    // تحديث UI
     updateRecordingUI(false);
     
-    // إيقاف التسجيل
     if (recognition) {
         try {
             recognition.stop();
-        } catch (e) {
-            console.log('Recognition already stopped');
-        }
+        } catch (e) {}
         recognition = null;
     }
     
@@ -408,7 +393,6 @@ function updateRecordingUI(recording) {
     if (!btn) return;
     
     if (recording) {
-        // وضع التسجيل
         btn.style.background = '#f44336';
         btn.innerHTML = '<i class="fas fa-stop"></i> <span>إيقاف التسجيل</span>';
         
@@ -416,7 +400,6 @@ function updateRecordingUI(recording) {
             indicator.style.display = 'flex';
         }
     } else {
-        // الوضع الطبيعي
         btn.style.background = '#4caf50';
         btn.innerHTML = '<i class="fas fa-microphone"></i> <span>اضافة موعد من خلال تسجيل صوتي</span>';
         
@@ -450,26 +433,302 @@ function stopTimer() {
 }
 
 // ==========================================
-// إضافة موعد من الصوت
+// 🧠 استخراج البيانات من النص (محلياً بدون AI)
 // ==========================================
-async function addVoiceAppointment(title) {
-    // ملء حقل العنوان
-    const titleInput = document.getElementById('title');
-    if (titleInput) {
-        titleInput.value = title;
+function parseVoiceToAppointment(text) {
+    console.log('🔍 تحليل النص:', text);
+    
+    const result = {
+        title: '',
+        date: '',
+        time: '',
+        description: 'تم الإضافة بالتسجيل الصوتي'
+    };
+    
+    // ==========================================
+    // 1️⃣ استخراج التاريخ
+    // ==========================================
+    const today = new Date();
+    let targetDate = new Date(today);
+    
+    // التعبيرات الزمنية
+    if (text.match(/اليوم|الآن/)) {
+        targetDate = new Date(today);
+    } else if (text.match(/غد|بكرة|غدا/)) {
+        targetDate.setDate(today.getDate() + 1);
+    } else if (text.match(/بعد غد|بعد بكرة/)) {
+        targetDate.setDate(today.getDate() + 2);
+    } else if (text.match(/بعد (\d+) (يوم|ايام)/)) {
+        const match = text.match(/بعد (\d+) (يوم|ايام)/);
+        const days = parseInt(match[1]);
+        targetDate.setDate(today.getDate() + days);
     }
     
-    // تحضير البيانات الافتراضية
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date().toTimeString().split(' ')[0].substring(0, 5);
+    // الأيام
+    const daysMap = {
+        'السبت': 6, 'الأحد': 0, 'الإثنين': 1, 'الاثنين': 1,
+        'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4, 'الجمعة': 5
+    };
     
-    const appointmentData = {
-        title: title,
-        date: document.getElementById('date').value || today,
-        time: document.getElementById('time').value || now,
-        description: 'تم الإضافة بالتسجيل الصوتي',
-        reminderEnabled: false,
-        timezone: document.getElementById('timezone').value || 'Europe/Berlin'
+    for (const [dayName, dayNum] of Object.entries(daysMap)) {
+        if (text.includes(dayName)) {
+            const currentDay = today.getDay();
+            let daysUntil = dayNum - currentDay;
+            if (daysUntil <= 0) daysUntil += 7;
+            targetDate = new Date(today);
+            targetDate.setDate(today.getDate() + daysUntil);
+            break;
+        }
+    }
+    
+    result.date = targetDate.toISOString().split('T')[0];
+    
+    // ==========================================
+    // 2️⃣ استخراج الوقت
+    // ==========================================
+    let hour = 12;
+    let minute = 0;
+    
+    // الأرقام العربية والإنجليزية
+    const arabicNums = {'٠':0,'١':1,'٢':2,'٣':3,'٤':4,'٥':5,'٦':6,'٧':7,'٨':8,'٩':9};
+    let normalizedText = text;
+    for (const [ar, en] of Object.entries(arabicNums)) {
+        normalizedText = normalizedText.replace(new RegExp(ar, 'g'), en);
+    }
+    
+    // البحث عن الوقت: "3 ظهراً", "الساعة 5 مساءً", "10:30"
+    const timePatterns = [
+        /(\d{1,2}):(\d{2})\s*(ص|صباح|م|مساء|ظهر|ليل)?/,
+        /الساعة\s*(\d{1,2})\s*(و|:)?\s*(\d{1,2})?\s*(ص|صباح|م|مساء|ظهر|ليل)?/,
+        /(\d{1,2})\s*(ص|صباح|م|مساء|ظهر|ليل)/
+    ];
+    
+    for (const pattern of timePatterns) {
+        const match = normalizedText.match(pattern);
+        if (match) {
+            hour = parseInt(match[1]);
+            minute = match[2] ? parseInt(match[2]) : (match[3] ? parseInt(match[3]) : 0);
+            
+            const period = match[match.length - 1];
+            
+            // تحويل للصيغة 24 ساعة
+            if (period) {
+                if ((period.includes('م') || period.includes('مساء') || period.includes('ليل')) && hour < 12) {
+                    hour += 12;
+                } else if ((period.includes('ص') || period.includes('صباح')) && hour === 12) {
+                    hour = 0;
+                } else if (period.includes('ظهر') && hour < 12) {
+                    hour += 12;
+                }
+            }
+            
+            break;
+        }
+    }
+    
+    result.time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    
+    // ==========================================
+    // 3️⃣ استخراج العنوان
+    // ==========================================
+    let title = text;
+    
+    // إزالة الكلمات المتعلقة بالوقت والتاريخ
+    const removeWords = [
+        'موعد', 'اجتماع', 'مقابلة', 'لقاء',
+        'اليوم', 'غداً', 'غدا', 'بكرة', 'بعد غد',
+        'السبت', 'الأحد', 'الإثنين', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة',
+        'الساعة', 'صباحاً', 'صباحا', 'مساءً', 'مساء', 'ظهراً', 'ظهرا', 'ليلاً', 'ليلا',
+        'ص', 'م',
+        /\d{1,2}:\d{2}/,
+        /\d{1,2}/,
+        /يوم/,
+        /بعد \d+ (يوم|ايام)/
+    ];
+    
+    removeWords.forEach(word => {
+        if (word instanceof RegExp) {
+            title = title.replace(word, '');
+        } else {
+            title = title.replace(new RegExp(word, 'gi'), '');
+        }
+    });
+    
+    title = title.trim().replace(/\s+/g, ' ');
+    
+    // إذا لم يبقى شيء، استخدم جزء من النص الأصلي
+    if (!title || title.length < 3) {
+        title = text.substring(0, 30);
+    }
+    
+    result.title = title;
+    
+    // التحقق من صحة البيانات
+    if (!result.title || result.title.length < 2) {
+        console.error('❌ فشل استخراج العنوان');
+        return null;
+    }
+    
+    console.log('✅ البيانات المستخرجة:', result);
+    return result;
+}
+
+// ==========================================
+// 🎨 نافذة التأكيد المتطورة
+// ==========================================
+function showAppointmentConfirmModal(appointmentData, originalText) {
+    const modal = document.createElement('div');
+    modal.id = 'confirmModal';
+    modal.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; animation: fadeIn 0.3s;">
+            <div style="background: white; padding: 30px; border-radius: 20px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.3); animation: slideUp 0.3s;">
+                
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: white;">
+                        🎤
+                    </div>
+                    <h2 style="margin: 0; color: #2c3e50; font-size: 24px;">تأكيد الموعد</h2>
+                    <p style="color: #999; font-size: 14px; margin-top: 5px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-style: italic;">"${originalText}"</p>
+                </div>
+                
+                <form id="confirmForm" style="margin-bottom: 20px;">
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
+                            <i class="fas fa-heading"></i> عنوان الموعد *
+                        </label>
+                        <input type="text" id="confirmTitle" value="${appointmentData.title || ''}" required 
+                            style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: all 0.3s; box-sizing: border-box;">
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                            <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
+                                <i class="fas fa-calendar"></i> التاريخ *
+                            </label>
+                            <input type="date" id="confirmDate" value="${appointmentData.date || ''}" required 
+                                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                            <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
+                                <i class="fas fa-clock"></i> الوقت *
+                            </label>
+                            <input type="time" id="confirmTime" value="${appointmentData.time || ''}" required 
+                                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
+                            <i class="fas fa-align-right"></i> الوصف
+                        </label>
+                        <textarea id="confirmDescription" rows="3" 
+                            style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; resize: vertical; box-sizing: border-box;">${appointmentData.description || 'تم الإضافة بالتسجيل الصوتي'}</textarea>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
+                            <i class="fas fa-globe"></i> المنطقة الزمنية
+                        </label>
+                        <select id="confirmTimezone" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                            <option value="Europe/Berlin" selected>برلين (GMT+1)</option>
+                            <option value="Asia/Riyadh">الرياض (GMT+3)</option>
+                            <option value="Asia/Dubai">دبي (GMT+4)</option>
+                            <option value="Africa/Cairo">القاهرة (GMT+2)</option>
+                            <option value="Asia/Kuwait">الكويت (GMT+3)</option>
+                        </select>
+                    </div>
+                    
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px dashed #4caf50;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="confirmReminder" style="width: 20px; height: 20px; margin-left: 10px; cursor: pointer;">
+                            <span style="color: #2c3e50; font-weight: 600;">
+                                <i class="fas fa-bell"></i> تفعيل التذكير بالبريد الإلكتروني
+                            </span>
+                        </label>
+                        
+                        <div id="confirmEmailField" style="display: none; margin-top: 15px;">
+                            <input type="email" id="confirmEmail" placeholder="example@email.com" 
+                                style="width: 100%; padding: 12px; border: 2px solid #4caf50; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <button type="submit" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s;">
+                            ✅ تأكيد وإضافة
+                        </button>
+                        <button type="button" id="cancelConfirmBtn" style="flex: 1; padding: 15px; background: #e0e0e0; color: #666; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s;">
+                            ❌ إلغاء
+                        </button>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+        
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateY(50px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            #confirmModal input:focus, 
+            #confirmModal select:focus, 
+            #confirmModal textarea:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Toggle email field
+    const checkbox = modal.querySelector('#confirmReminder');
+    const emailField = modal.querySelector('#confirmEmailField');
+    const emailInput = modal.querySelector('#confirmEmail');
+    
+    checkbox.onchange = async function() {
+        if (this.checked) {
+            emailField.style.display = 'block';
+            if (!emailInput.value) {
+                const userEmail = await getUserEmail();
+                if (userEmail) emailInput.value = userEmail;
+            }
+        } else {
+            emailField.style.display = 'none';
+        }
+    };
+    
+    // Cancel button
+    modal.querySelector('#cancelConfirmBtn').onclick = () => {
+        modal.remove();
+    };
+    
+    // Submit form
+    modal.querySelector('#confirmForm').onsubmit = async (e) => {
+        e.preventDefault();
+        await saveConfirmedAppointment(modal);
+    };
+}
+
+// ==========================================
+// حفظ الموعد المؤكد
+// ==========================================
+async function saveConfirmedAppointment(modal) {
+    const finalData = {
+        title: modal.querySelector('#confirmTitle').value,
+        date: modal.querySelector('#confirmDate').value,
+        time: modal.querySelector('#confirmTime').value,
+        description: modal.querySelector('#confirmDescription').value,
+        timezone: modal.querySelector('#confirmTimezone').value,
+        reminderEnabled: modal.querySelector('#confirmReminder').checked,
+        reminderEmail: modal.querySelector('#confirmReminder').checked ? modal.querySelector('#confirmEmail').value : null
     };
     
     try {
@@ -480,21 +739,22 @@ async function addVoiceAppointment(title) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(appointmentData)
+            body: JSON.stringify(finalData)
         });
         
         const data = await response.json();
         
         if (data.success) {
-            alert('✅ تم إضافة الموعد: ' + title);
+            modal.remove();
+            alert('✅ تم إضافة الموعد بنجاح!');
             document.getElementById('appointmentForm').reset();
             await loadAppointments();
         } else {
-            alert('❌ خطأ: ' + (data.message || 'فشل إضافة الموعد'));
+            alert('❌ ' + (data.message || 'خطأ في إضافة الموعد'));
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('❌ خطأ في إضافة الموعد');
+        alert('❌ خطأ في حفظ الموعد');
     }
 }
 
@@ -516,17 +776,14 @@ async function editAppointment(id) {
         const data = await response.json();
         const appointment = data.appointment || data;
         
-        // تحويل التاريخ
         const date = new Date(appointment.date);
         const dateStr = date.toISOString().split('T')[0];
         
-        // جلب الإيميل
         let defaultEmail = appointment.reminderEmail || '';
         if (!defaultEmail && appointment.reminderEnabled) {
             defaultEmail = await getUserEmail();
         }
         
-        // إنشاء النافذة
         const modal = document.createElement('div');
         modal.innerHTML = `
             <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px;">
@@ -586,7 +843,6 @@ async function editAppointment(id) {
         
         document.body.appendChild(modal);
         
-        // Toggle email field
         const checkbox = modal.querySelector('#editReminderEnabled');
         const emailField = modal.querySelector('#editEmailField');
         const emailInput = modal.querySelector('#editReminderEmail');
@@ -602,10 +858,8 @@ async function editAppointment(id) {
             }
         };
         
-        // Cancel button
         modal.querySelector('#cancelBtn').onclick = () => modal.remove();
         
-        // Submit form
         modal.querySelector('#editForm').onsubmit = async (e) => {
             e.preventDefault();
             

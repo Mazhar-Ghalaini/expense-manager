@@ -156,7 +156,7 @@ async function loadAppointments() {
 }
 
 // ==========================================
-// عرض المواعيد
+// عرض المواعيد - UPDATED (تاريخ إنجليزي)
 // ==========================================
 function displayAppointments(appointments) {
     const container = document.getElementById('appointmentsList');
@@ -172,33 +172,43 @@ function displayAppointments(appointments) {
         return;
     }
     
-    const html = appointments.map(apt => `
-        <div class="appointment-item">
-            <div class="appointment-info">
-                <h3>${apt.title}</h3>
-                <div class="appointment-date">
-                    <i class="fas fa-calendar"></i> ${new Date(apt.date).toLocaleDateString('ar-SA')}
-                    <i class="fas fa-clock" style="margin-right: 15px;"></i> ${apt.time}
-                    ${apt.reminderEnabled ? '<i class="fas fa-envelope" style="margin-right: 15px; color: #4caf50;" title="التذكير مفعّل"></i>' : ''}
+    const html = appointments.map(apt => {
+        // تنسيق التاريخ بالإنجليزية
+        const dateObj = new Date(apt.date);
+        const formattedDate = dateObj.toLocaleDateString('en-GB', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        
+        return `
+            <div class="appointment-item">
+                <div class="appointment-info">
+                    <h3>${apt.title}</h3>
+                    <div class="appointment-date">
+                        <i class="fas fa-calendar"></i> ${formattedDate}
+                        <i class="fas fa-clock" style="margin-right: 15px;"></i> ${apt.time}
+                        ${apt.reminderEnabled ? '<i class="fas fa-envelope" style="margin-right: 15px; color: #4caf50;" title="التذكير مفعّل"></i>' : ''}
+                    </div>
+                    ${apt.description ? `<p style="margin-top: 5px; color: #666;">${apt.description}</p>` : ''}
+                    ${apt.reminderEnabled && apt.reminderEmail ? `<p style="margin-top: 5px; color: #4caf50; font-size: 13px;"><i class="fas fa-envelope"></i> ${apt.reminderEmail}</p>` : ''}
                 </div>
-                ${apt.description ? `<p style="margin-top: 5px; color: #666;">${apt.description}</p>` : ''}
-                ${apt.reminderEnabled && apt.reminderEmail ? `<p style="margin-top: 5px; color: #4caf50; font-size: 13px;"><i class="fas fa-envelope"></i> ${apt.reminderEmail}</p>` : ''}
-            </div>
-            <div class="appointment-actions">
-                <button class="btn btn-primary btn-sm" onclick="editAppointment('${apt._id}')" title="تعديل">
-                    <i class="fas fa-edit"></i>
-                </button>
-                ${apt.reminderEnabled && apt.reminderEmail ? `
-                    <button class="btn btn-success btn-sm" onclick="sendEmailReminder('${apt._id}')" title="إرسال تذكير">
-                        <i class="fas fa-paper-plane"></i>
+                <div class="appointment-actions">
+                    <button class="btn btn-primary btn-sm" onclick="editAppointment('${apt._id}')" title="تعديل">
+                        <i class="fas fa-edit"></i>
                     </button>
-                ` : ''}
-                <button class="btn btn-danger btn-sm" onclick="deleteAppointment('${apt._id}')" title="حذف">
-                    <i class="fas fa-trash"></i>
-                </button>
+                    ${apt.reminderEnabled && apt.reminderEmail ? `
+                        <button class="btn btn-success btn-sm" onclick="sendEmailReminder('${apt._id}')" title="إرسال تذكير">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-danger btn-sm" onclick="deleteAppointment('${apt._id}')" title="حذف">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
     container.innerHTML = html;
 }
@@ -269,7 +279,7 @@ function toggleVoiceAppointment() {
 }
 
 // ==========================================
-// بدء التسجيل
+// بدء التسجيل - UPDATED (إيقاف تلقائي)
 // ==========================================
 function startRecording() {
     if (recognition) {
@@ -303,6 +313,8 @@ function startRecording() {
     recognition.onresult = async (event) => {
         const text = event.results[0][0].transcript;
         console.log('✅ تم التعرف على:', text);
+        
+        // ✅ FIX: إيقاف التسجيل فوراً
         stopRecording();
         
         // استخراج البيانات محلياً
@@ -319,15 +331,15 @@ function startRecording() {
     recognition.onerror = (event) => {
         console.error('❌ خطأ في التسجيل:', event.error);
         
-        if (event.error === 'aborted' && !isRecording) {
-            return;
+        // ✅ FIX: إيقاف تلقائي عند الخطأ
+        stopRecording();
+        
+        if (event.error === 'aborted' || event.error === 'no-speech') {
+            return; // خروج صامت
         }
         
         let errorMsg = 'خطأ في التسجيل';
         switch(event.error) {
-            case 'no-speech':
-                errorMsg = 'لم يتم اكتشاف صوت. حاول مرة أخرى.';
-                break;
             case 'audio-capture':
                 errorMsg = 'لا يمكن الوصول للميكروفون.';
                 break;
@@ -340,10 +352,10 @@ function startRecording() {
         }
         
         alert('❌ ' + errorMsg);
-        stopRecording();
     };
     
     recognition.onend = () => {
+        // ✅ FIX: التأكد من الإيقاف النهائي
         if (isRecording) {
             console.log('🛑 انتهى التسجيل');
             stopRecording();
@@ -433,7 +445,7 @@ function stopTimer() {
 }
 
 // ==========================================
-// 🧠 استخراج البيانات من النص (محلياً بدون AI)
+// 🧠 استخراج البيانات من النص
 // ==========================================
 function parseVoiceToAppointment(text) {
     console.log('🔍 تحليل النص:', text);
@@ -445,13 +457,10 @@ function parseVoiceToAppointment(text) {
         description: 'تم الإضافة بالتسجيل الصوتي'
     };
     
-    // ==========================================
-    // 1️⃣ استخراج التاريخ
-    // ==========================================
     const today = new Date();
     let targetDate = new Date(today);
     
-    // التعبيرات الزمنية
+    // استخراج التاريخ
     if (text.match(/اليوم|الآن/)) {
         targetDate = new Date(today);
     } else if (text.match(/غد|بكرة|غدا/)) {
@@ -464,7 +473,6 @@ function parseVoiceToAppointment(text) {
         targetDate.setDate(today.getDate() + days);
     }
     
-    // الأيام
     const daysMap = {
         'السبت': 6, 'الأحد': 0, 'الإثنين': 1, 'الاثنين': 1,
         'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4, 'الجمعة': 5
@@ -483,20 +491,16 @@ function parseVoiceToAppointment(text) {
     
     result.date = targetDate.toISOString().split('T')[0];
     
-    // ==========================================
-    // 2️⃣ استخراج الوقت
-    // ==========================================
+    // استخراج الوقت
     let hour = 12;
     let minute = 0;
     
-    // الأرقام العربية والإنجليزية
     const arabicNums = {'٠':0,'١':1,'٢':2,'٣':3,'٤':4,'٥':5,'٦':6,'٧':7,'٨':8,'٩':9};
     let normalizedText = text;
     for (const [ar, en] of Object.entries(arabicNums)) {
         normalizedText = normalizedText.replace(new RegExp(ar, 'g'), en);
     }
     
-    // البحث عن الوقت: "3 ظهراً", "الساعة 5 مساءً", "10:30"
     const timePatterns = [
         /(\d{1,2}):(\d{2})\s*(ص|صباح|م|مساء|ظهر|ليل)?/,
         /الساعة\s*(\d{1,2})\s*(و|:)?\s*(\d{1,2})?\s*(ص|صباح|م|مساء|ظهر|ليل)?/,
@@ -511,7 +515,6 @@ function parseVoiceToAppointment(text) {
             
             const period = match[match.length - 1];
             
-            // تحويل للصيغة 24 ساعة
             if (period) {
                 if ((period.includes('م') || period.includes('مساء') || period.includes('ليل')) && hour < 12) {
                     hour += 12;
@@ -528,12 +531,9 @@ function parseVoiceToAppointment(text) {
     
     result.time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     
-    // ==========================================
-    // 3️⃣ استخراج العنوان
-    // ==========================================
+    // استخراج العنوان
     let title = text;
     
-    // إزالة الكلمات المتعلقة بالوقت والتاريخ
     const removeWords = [
         'موعد', 'اجتماع', 'مقابلة', 'لقاء',
         'اليوم', 'غداً', 'غدا', 'بكرة', 'بعد غد',
@@ -556,14 +556,12 @@ function parseVoiceToAppointment(text) {
     
     title = title.trim().replace(/\s+/g, ' ');
     
-    // إذا لم يبقى شيء، استخدم جزء من النص الأصلي
     if (!title || title.length < 3) {
         title = text.substring(0, 30);
     }
     
     result.title = title;
     
-    // التحقق من صحة البيانات
     if (!result.title || result.title.length < 2) {
         console.error('❌ فشل استخراج العنوان');
         return null;
@@ -574,121 +572,138 @@ function parseVoiceToAppointment(text) {
 }
 
 // ==========================================
-// 🎨 نافذة التأكيد المتطورة
+// 🎨 نافذة التأكيد - FIXED للموبايل
 // ==========================================
 function showAppointmentConfirmModal(appointmentData, originalText) {
     const modal = document.createElement('div');
     modal.id = 'confirmModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+        padding: 15px;
+        overflow-y: auto;
+    `;
+    
     modal.innerHTML = `
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; animation: fadeIn 0.3s;">
-            <div style="background: white; padding: 30px; border-radius: 20px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.3); animation: slideUp 0.3s;">
+        <div style="background: white; padding: 25px; border-radius: 20px; max-width: 600px; width: 100%; max-height: 95vh; overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.3); animation: slideUp 0.3s;">
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 35px; color: white;">
+                    🎤
+                </div>
+                <h2 style="margin: 0; color: #2c3e50; font-size: 22px;">تأكيد الموعد</h2>
+                <p style="color: #999; font-size: 13px; margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-style: italic; word-wrap: break-word;">"${originalText}"</p>
+            </div>
+            
+            <form id="confirmForm">
                 
-                <div style="text-align: center; margin-bottom: 25px;">
-                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: white;">
-                        🎤
-                    </div>
-                    <h2 style="margin: 0; color: #2c3e50; font-size: 24px;">تأكيد الموعد</h2>
-                    <p style="color: #999; font-size: 14px; margin-top: 5px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-style: italic;">"${originalText}"</p>
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
+                        <i class="fas fa-heading"></i> عنوان الموعد *
+                    </label>
+                    <input type="text" id="confirmTitle" value="${appointmentData.title || ''}" required 
+                        style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
                 </div>
                 
-                <form id="confirmForm" style="margin-bottom: 20px;">
-                    
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
-                            <i class="fas fa-heading"></i> عنوان الموعد *
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 10px;">
+                        <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-calendar"></i> التاريخ *
                         </label>
-                        <input type="text" id="confirmTitle" value="${appointmentData.title || ''}" required 
-                            style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: all 0.3s; box-sizing: border-box;">
+                        <input type="date" id="confirmDate" value="${appointmentData.date || ''}" required 
+                            style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                            <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
-                                <i class="fas fa-calendar"></i> التاريخ *
-                            </label>
-                            <input type="date" id="confirmDate" value="${appointmentData.date || ''}" required 
-                                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
-                        </div>
-                        
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                            <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
-                                <i class="fas fa-clock"></i> الوقت *
-                            </label>
-                            <input type="time" id="confirmTime" value="${appointmentData.time || ''}" required 
-                                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
-                        </div>
-                    </div>
-                    
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
-                            <i class="fas fa-align-right"></i> الوصف
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 10px;">
+                        <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-clock"></i> الوقت *
                         </label>
-                        <textarea id="confirmDescription" rows="3" 
-                            style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; resize: vertical; box-sizing: border-box;">${appointmentData.description || 'تم الإضافة بالتسجيل الصوتي'}</textarea>
+                        <input type="time" id="confirmTime" value="${appointmentData.time || ''}" required 
+                            style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                     </div>
-                    
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 600;">
-                            <i class="fas fa-globe"></i> المنطقة الزمنية
-                        </label>
-                        <select id="confirmTimezone" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
-                            <option value="Europe/Berlin" selected>برلين (GMT+1)</option>
-                            <option value="Asia/Riyadh">الرياض (GMT+3)</option>
-                            <option value="Asia/Dubai">دبي (GMT+4)</option>
-                            <option value="Africa/Cairo">القاهرة (GMT+2)</option>
-                            <option value="Asia/Kuwait">الكويت (GMT+3)</option>
-                        </select>
-                    </div>
-                    
-                    <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px dashed #4caf50;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="confirmReminder" style="width: 20px; height: 20px; margin-left: 10px; cursor: pointer;">
-                            <span style="color: #2c3e50; font-weight: 600;">
-                                <i class="fas fa-bell"></i> تفعيل التذكير بالبريد الإلكتروني
-                            </span>
-                        </label>
-                        
-                        <div id="confirmEmailField" style="display: none; margin-top: 15px;">
-                            <input type="email" id="confirmEmail" placeholder="example@email.com" 
-                                style="width: 100%; padding: 12px; border: 2px solid #4caf50; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 15px;">
-                        <button type="submit" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s;">
-                            ✅ تأكيد وإضافة
-                        </button>
-                        <button type="button" id="cancelConfirmBtn" style="flex: 1; padding: 15px; background: #e0e0e0; color: #666; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s;">
-                            ❌ إلغاء
-                        </button>
-                    </div>
-                </form>
+                </div>
                 
-            </div>
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
+                        <i class="fas fa-align-right"></i> الوصف
+                    </label>
+                    <textarea id="confirmDescription" rows="2" 
+                        style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical; box-sizing: border-box;">${appointmentData.description || 'تم الإضافة بالتسجيل الصوتي'}</textarea>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
+                        <i class="fas fa-globe"></i> المنطقة الزمنية
+                    </label>
+                    <select id="confirmTimezone" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                        <option value="Europe/Berlin" selected>برلين (GMT+1)</option>
+                        <option value="Asia/Riyadh">الرياض (GMT+3)</option>
+                        <option value="Asia/Dubai">دبي (GMT+4)</option>
+                        <option value="Africa/Cairo">القاهرة (GMT+2)</option>
+                        <option value="Asia/Kuwait">الكويت (GMT+3)</option>
+                    </select>
+                </div>
+                
+                <div style="background: #e8f5e9; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 2px dashed #4caf50;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="confirmReminder" style="width: 18px; height: 18px; margin-left: 8px; cursor: pointer;">
+                        <span style="color: #2c3e50; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-bell"></i> تفعيل التذكير بالبريد
+                        </span>
+                    </label>
+                    
+                    <div id="confirmEmailField" style="display: none; margin-top: 12px;">
+                        <input type="email" id="confirmEmail" placeholder="example@email.com" 
+                            style="width: 100%; padding: 10px; border: 2px solid #4caf50; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 600;">
+                        ✅ تأكيد
+                    </button>
+                    <button type="button" id="cancelConfirmBtn" style="padding: 12px; background: #e0e0e0; color: #666; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 600;">
+                        ❌ إلغاء
+                    </button>
+                </div>
+            </form>
+            
         </div>
         
         <style>
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
             @keyframes slideUp {
-                from { transform: translateY(50px); opacity: 0; }
+                from { transform: translateY(30px); opacity: 0; }
                 to { transform: translateY(0); opacity: 1; }
             }
             #confirmModal input:focus, 
             #confirmModal select:focus, 
             #confirmModal textarea:focus {
                 outline: none;
-                border-color: #667eea;
+                border-color: #667eea !important;
                 box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            @media (max-width: 768px) {
+                #confirmModal > div {
+                    padding: 20px !important;
+                    margin: auto;
+                }
             }
         </style>
     `;
     
     document.body.appendChild(modal);
     
-    // Toggle email field
+    // ✅ منع السكرول في الخلفية
+    document.body.style.overflow = 'hidden';
+    
     const checkbox = modal.querySelector('#confirmReminder');
     const emailField = modal.querySelector('#confirmEmailField');
     const emailInput = modal.querySelector('#confirmEmail');
@@ -705,12 +720,11 @@ function showAppointmentConfirmModal(appointmentData, originalText) {
         }
     };
     
-    // Cancel button
     modal.querySelector('#cancelConfirmBtn').onclick = () => {
         modal.remove();
+        document.body.style.overflow = ''; // ✅ إعادة السكرول
     };
     
-    // Submit form
     modal.querySelector('#confirmForm').onsubmit = async (e) => {
         e.preventDefault();
         await saveConfirmedAppointment(modal);
@@ -746,6 +760,7 @@ async function saveConfirmedAppointment(modal) {
         
         if (data.success) {
             modal.remove();
+            document.body.style.overflow = ''; // ✅ إعادة السكرول
             alert('✅ تم إضافة الموعد بنجاح!');
             document.getElementById('appointmentForm').reset();
             await loadAppointments();

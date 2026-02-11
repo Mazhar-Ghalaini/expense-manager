@@ -6,6 +6,7 @@ let isRecording = false;
 let recordingTimeout = null;
 let timerInterval = null;
 let recordingSeconds = 0;
+let isProcessing = false; // ✅ NEW: منع التنفيذ المتكرر
 
 // ==========================================
 // التهيئة عند تحميل الصفحة
@@ -44,9 +45,6 @@ function initializeEventListeners() {
     });
 }
 
-// ==========================================
-// Toggle Sidebar
-// ==========================================
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -55,9 +53,6 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle('active');
 }
 
-// ==========================================
-// Logout
-// ==========================================
 function logout() {
     if (confirm('هل تريد تسجيل الخروج؟')) {
         localStorage.removeItem('token');
@@ -66,9 +61,6 @@ function logout() {
     }
 }
 
-// ==========================================
-// تبديل حقل البريد الإلكتروني
-// ==========================================
 async function toggleReminderEmail() {
     const checkbox = document.getElementById('enableReminder');
     const emailField = document.getElementById('emailField');
@@ -91,9 +83,6 @@ async function toggleReminderEmail() {
     }
 }
 
-// ==========================================
-// إضافة موعد (من النموذج)
-// ==========================================
 async function handleAppointmentSubmit(e) {
     e.preventDefault();
     
@@ -136,9 +125,6 @@ async function handleAppointmentSubmit(e) {
     }
 }
 
-// ==========================================
-// تحميل المواعيد
-// ==========================================
 async function loadAppointments() {
     try {
         const token = localStorage.getItem('token');
@@ -155,9 +141,6 @@ async function loadAppointments() {
     }
 }
 
-// ==========================================
-// عرض المواعيد - UPDATED (تاريخ إنجليزي)
-// ==========================================
 function displayAppointments(appointments) {
     const container = document.getElementById('appointmentsList');
     
@@ -173,13 +156,8 @@ function displayAppointments(appointments) {
     }
     
     const html = appointments.map(apt => {
-        // تنسيق التاريخ بالإنجليزية
         const dateObj = new Date(apt.date);
-        const formattedDate = dateObj.toLocaleDateString('en-GB', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
+        const formattedDate = dateObj.toLocaleDateString('en-GB');
         
         return `
             <div class="appointment-item">
@@ -213,9 +191,6 @@ function displayAppointments(appointments) {
     container.innerHTML = html;
 }
 
-// ==========================================
-// حذف موعد
-// ==========================================
 async function deleteAppointment(id) {
     if (!confirm('هل تريد حذف هذا الموعد؟')) return;
     
@@ -239,9 +214,6 @@ async function deleteAppointment(id) {
     }
 }
 
-// ==========================================
-// إرسال تذكير بالبريد
-// ==========================================
 async function sendEmailReminder(id) {
     try {
         const token = localStorage.getItem('token');
@@ -263,7 +235,7 @@ async function sendEmailReminder(id) {
 }
 
 // ==========================================
-// 🎤 التسجيل الصوتي - UPDATED
+// 🎤 التسجيل الصوتي - FIXED COMPLETELY
 // ==========================================
 function toggleVoiceAppointment() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -272,132 +244,164 @@ function toggleVoiceAppointment() {
     }
     
     if (isRecording) {
-        stopRecording();
+        console.log('🛑 المستخدم أوقف التسجيل يدوياً');
+        forceStopRecording();
     } else {
         startRecording();
     }
 }
 
-// ==========================================
-// بدء التسجيل - UPDATED (إيقاف تلقائي)
-// ==========================================
 function startRecording() {
-    if (recognition) {
+    console.log('🎤 محاولة بدء التسجيل...');
+    
+    // ✅ تنظيف كامل
+    forceStopRecording();
+    
+    // انتظار 100ms قبل البدء (للتأكد من الإيقاف الكامل)
+    setTimeout(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        recognition.lang = 'ar-SA';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        
+        let hasResult = false; // ✅ NEW: تتبع النتائج
+        
+        recognition.onstart = () => {
+            isRecording = true;
+            isProcessing = false;
+            hasResult = false;
+            recordingSeconds = 0;
+            
+            console.log('✅ بدأ التسجيل');
+            updateRecordingUI(true);
+            startTimer();
+            
+            // إيقاف تلقائي بعد 15 ثانية
+            recordingTimeout = setTimeout(() => {
+                console.log('⏱️ انتهى الوقت (15 ثانية)');
+                forceStopRecording();
+                if (!hasResult) {
+                    alert('⏱️ انتهى وقت التسجيل. لم يتم اكتشاف صوت.');
+                }
+            }, 15000);
+        };
+        
+        recognition.onresult = (event) => {
+            if (hasResult || isProcessing) {
+                console.log('⚠️ تم تجاهل نتيجة مكررة');
+                return;
+            }
+            
+            hasResult = true;
+            isProcessing = true;
+            
+            const text = event.results[0][0].transcript;
+            const confidence = event.results[0][0].confidence;
+            
+            console.log('✅ النص:', text);
+            console.log('📊 الدقة:', (confidence * 100).toFixed(1) + '%');
+            
+            // إيقاف فوري
+            forceStopRecording();
+            
+            // معالجة النص
+            setTimeout(() => {
+                processVoiceInput(text);
+                isProcessing = false;
+            }, 100);
+        };
+        
+        recognition.onerror = (event) => {
+            console.error('❌ خطأ:', event.error);
+            
+            forceStopRecording();
+            
+            // عدم إظهار رسالة للأخطاء الطبيعية
+            if (event.error === 'aborted' || event.error === 'no-speech') {
+                return;
+            }
+            
+            let errorMsg = '';
+            switch(event.error) {
+                case 'audio-capture':
+                    errorMsg = 'لا يمكن الوصول للميكروفون';
+                    break;
+                case 'not-allowed':
+                    errorMsg = 'يجب السماح باستخدام الميكروفون';
+                    break;
+                case 'network':
+                    errorMsg = 'مشكلة في الاتصال بالإنترنت';
+                    break;
+                default:
+                    errorMsg = 'خطأ في التسجيل: ' + event.error;
+            }
+            
+            if (errorMsg) {
+                alert('❌ ' + errorMsg);
+            }
+        };
+        
+        recognition.onend = () => {
+            console.log('🔚 انتهى التسجيل');
+            
+            // التأكد من الإيقاف الكامل
+            if (isRecording) {
+                forceStopRecording();
+            }
+        };
+        
         try {
-            recognition.stop();
-        } catch (e) {}
-        recognition = null;
-    }
-    
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    
-    recognition.lang = 'ar-SA';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    
-    recognition.onstart = () => {
-        isRecording = true;
-        recordingSeconds = 0;
-        console.log('🎤 بدأ التسجيل الصوتي');
-        updateRecordingUI(true);
-        startTimer();
-        
-        recordingTimeout = setTimeout(() => {
-            console.log('⏱️ انتهى وقت التسجيل');
-            stopRecording();
-            alert('⏱️ تم إيقاف التسجيل تلقائياً بعد 20 ثانية');
-        }, 20000);
-    };
-    
-    recognition.onresult = async (event) => {
-        const text = event.results[0][0].transcript;
-        console.log('✅ تم التعرف على:', text);
-        
-        // ✅ FIX: إيقاف التسجيل فوراً
-        stopRecording();
-        
-        // استخراج البيانات محلياً
-        const extractedData = parseVoiceToAppointment(text);
-        
-        if (extractedData) {
-            // عرض نافذة التأكيد
-            showAppointmentConfirmModal(extractedData, text);
-        } else {
-            alert('❌ لم أتمكن من فهم الموعد. حاول مرة أخرى.\n\nمثال: "موعد غداً الساعة 3 ظهراً مع أحمد"');
-        }
-    };
-    
-    recognition.onerror = (event) => {
-        console.error('❌ خطأ في التسجيل:', event.error);
-        
-        // ✅ FIX: إيقاف تلقائي عند الخطأ
-        stopRecording();
-        
-        if (event.error === 'aborted' || event.error === 'no-speech') {
-            return; // خروج صامت
+            recognition.start();
+            console.log('🚀 تم استدعاء start()');
+        } catch (error) {
+            console.error('❌ فشل start():', error);
+            forceStopRecording();
+            alert('❌ لا يمكن بدء التسجيل. حاول مرة أخرى.');
         }
         
-        let errorMsg = 'خطأ في التسجيل';
-        switch(event.error) {
-            case 'audio-capture':
-                errorMsg = 'لا يمكن الوصول للميكروفون.';
-                break;
-            case 'not-allowed':
-                errorMsg = 'يجب السماح باستخدام الميكروفون.';
-                break;
-            case 'network':
-                errorMsg = 'مشكلة في الاتصال بالإنترنت.';
-                break;
-        }
-        
-        alert('❌ ' + errorMsg);
-    };
-    
-    recognition.onend = () => {
-        // ✅ FIX: التأكد من الإيقاف النهائي
-        if (isRecording) {
-            console.log('🛑 انتهى التسجيل');
-            stopRecording();
-        }
-    };
-    
-    try {
-        recognition.start();
-    } catch (error) {
-        console.error('❌ فشل بدء التسجيل:', error);
-        alert('❌ لا يمكن بدء التسجيل. حاول مرة أخرى.');
-        stopRecording();
-    }
+    }, 100);
 }
 
-// ==========================================
-// إيقاف التسجيل
-// ==========================================
-function stopRecording() {
-    isRecording = false;
-    stopTimer();
+// ✅ إيقاف قسري كامل
+function forceStopRecording() {
+    console.log('🛑 إيقاف قسري...');
     
+    isRecording = false;
+    isProcessing = false;
+    
+    // إيقاف العداد
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    
+    // إيقاف المؤقت
     if (recordingTimeout) {
         clearTimeout(recordingTimeout);
         recordingTimeout = null;
     }
     
-    updateRecordingUI(false);
-    
+    // إيقاف recognition
     if (recognition) {
         try {
-            recognition.stop();
-        } catch (e) {}
+            recognition.abort(); // ✅ abort بدلاً من stop
+            recognition.onstart = null;
+            recognition.onend = null;
+            recognition.onresult = null;
+            recognition.onerror = null;
+        } catch (e) {
+            console.log('Recognition already stopped');
+        }
         recognition = null;
     }
     
     recordingSeconds = 0;
+    updateRecordingUI(false);
 }
 
-// ==========================================
-// تحديث واجهة التسجيل
-// ==========================================
 function updateRecordingUI(recording) {
     const btn = document.getElementById('voiceBtn');
     const indicator = document.getElementById('recordingIndicator');
@@ -407,23 +411,14 @@ function updateRecordingUI(recording) {
     if (recording) {
         btn.style.background = '#f44336';
         btn.innerHTML = '<i class="fas fa-stop"></i> <span>إيقاف التسجيل</span>';
-        
-        if (indicator) {
-            indicator.style.display = 'flex';
-        }
+        if (indicator) indicator.style.display = 'flex';
     } else {
         btn.style.background = '#4caf50';
         btn.innerHTML = '<i class="fas fa-microphone"></i> <span>اضافة موعد من خلال تسجيل صوتي</span>';
-        
-        if (indicator) {
-            indicator.style.display = 'none';
-        }
+        if (indicator) indicator.style.display = 'none';
     }
 }
 
-// ==========================================
-// بدء العداد
-// ==========================================
 function startTimer() {
     timerInterval = setInterval(() => {
         recordingSeconds++;
@@ -435,18 +430,20 @@ function startTimer() {
 }
 
 // ==========================================
-// إيقاف العداد
+// معالجة النص المُدخل
 // ==========================================
-function stopTimer() {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
+function processVoiceInput(text) {
+    console.log('🔄 معالجة النص:', text);
+    
+    const extractedData = parseVoiceToAppointment(text);
+    
+    if (extractedData) {
+        showAppointmentConfirmModal(extractedData, text);
+    } else {
+        alert('❌ لم أتمكن من فهم الموعد.\n\nمثال صحيح:\n"موعد غداً الساعة 3 ظهراً مع أحمد"');
     }
 }
 
-// ==========================================
-// 🧠 استخراج البيانات من النص
-// ==========================================
 function parseVoiceToAppointment(text) {
     console.log('🔍 تحليل النص:', text);
     
@@ -571,137 +568,72 @@ function parseVoiceToAppointment(text) {
     return result;
 }
 
-// ==========================================
-// 🎨 نافذة التأكيد - FIXED للموبايل
-// ==========================================
 function showAppointmentConfirmModal(appointmentData, originalText) {
     const modal = document.createElement('div');
     modal.id = 'confirmModal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 999999;
-        padding: 15px;
-        overflow-y: auto;
-    `;
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:999999;padding:15px;overflow-y:auto;';
     
     modal.innerHTML = `
-        <div style="background: white; padding: 25px; border-radius: 20px; max-width: 600px; width: 100%; max-height: 95vh; overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.3); animation: slideUp 0.3s;">
+        <div style="background:white;padding:25px;border-radius:20px;max-width:600px;width:100%;max-height:95vh;overflow-y:auto;box-shadow:0 10px 50px rgba(0,0,0,0.3);">
             
-            <div style="text-align: center; margin-bottom: 20px;">
-                <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 35px; color: white;">
-                    🎤
-                </div>
-                <h2 style="margin: 0; color: #2c3e50; font-size: 22px;">تأكيد الموعد</h2>
-                <p style="color: #999; font-size: 13px; margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-style: italic; word-wrap: break-word;">"${originalText}"</p>
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="width:70px;height:70px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:50%;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;font-size:35px;color:white;">🎤</div>
+                <h2 style="margin:0;color:#2c3e50;font-size:22px;">تأكيد الموعد</h2>
+                <p style="color:#999;font-size:13px;margin-top:8px;padding:10px;background:#f8f9fa;border-radius:8px;font-style:italic;word-wrap:break-word;">"${originalText}"</p>
             </div>
             
             <form id="confirmForm">
                 
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
-                        <i class="fas fa-heading"></i> عنوان الموعد *
-                    </label>
-                    <input type="text" id="confirmTitle" value="${appointmentData.title || ''}" required 
-                        style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                <div style="background:#f8f9fa;padding:12px;border-radius:10px;margin-bottom:15px;">
+                    <label style="display:block;margin-bottom:6px;color:#2c3e50;font-weight:600;font-size:14px;"><i class="fas fa-heading"></i> عنوان الموعد *</label>
+                    <input type="text" id="confirmTitle" value="${appointmentData.title||''}" required style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;box-sizing:border-box;">
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 10px;">
-                        <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-calendar"></i> التاريخ *
-                        </label>
-                        <input type="date" id="confirmDate" value="${appointmentData.date || ''}" required 
-                            style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+                    <div style="background:#f8f9fa;padding:12px;border-radius:10px;">
+                        <label style="display:block;margin-bottom:6px;color:#2c3e50;font-weight:600;font-size:14px;"><i class="fas fa-calendar"></i> التاريخ *</label>
+                        <input type="date" id="confirmDate" value="${appointmentData.date||''}" required style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;">
                     </div>
-                    
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 10px;">
-                        <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-clock"></i> الوقت *
-                        </label>
-                        <input type="time" id="confirmTime" value="${appointmentData.time || ''}" required 
-                            style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                    <div style="background:#f8f9fa;padding:12px;border-radius:10px;">
+                        <label style="display:block;margin-bottom:6px;color:#2c3e50;font-weight:600;font-size:14px;"><i class="fas fa-clock"></i> الوقت *</label>
+                        <input type="time" id="confirmTime" value="${appointmentData.time||''}" required style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;">
                     </div>
                 </div>
                 
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
-                        <i class="fas fa-align-right"></i> الوصف
-                    </label>
-                    <textarea id="confirmDescription" rows="2" 
-                        style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical; box-sizing: border-box;">${appointmentData.description || 'تم الإضافة بالتسجيل الصوتي'}</textarea>
+                <div style="background:#f8f9fa;padding:12px;border-radius:10px;margin-bottom:15px;">
+                    <label style="display:block;margin-bottom:6px;color:#2c3e50;font-weight:600;font-size:14px;"><i class="fas fa-align-right"></i> الوصف</label>
+                    <textarea id="confirmDescription" rows="2" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;">${appointmentData.description||'تم الإضافة بالتسجيل الصوتي'}</textarea>
                 </div>
                 
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; font-size: 14px;">
-                        <i class="fas fa-globe"></i> المنطقة الزمنية
-                    </label>
-                    <select id="confirmTimezone" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                <div style="background:#f8f9fa;padding:12px;border-radius:10px;margin-bottom:15px;">
+                    <label style="display:block;margin-bottom:6px;color:#2c3e50;font-weight:600;font-size:14px;"><i class="fas fa-globe"></i> المنطقة الزمنية</label>
+                    <select id="confirmTimezone" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;">
                         <option value="Europe/Berlin" selected>برلين (GMT+1)</option>
                         <option value="Asia/Riyadh">الرياض (GMT+3)</option>
                         <option value="Asia/Dubai">دبي (GMT+4)</option>
                         <option value="Africa/Cairo">القاهرة (GMT+2)</option>
-                        <option value="Asia/Kuwait">الكويت (GMT+3)</option>
                     </select>
                 </div>
                 
-                <div style="background: #e8f5e9; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 2px dashed #4caf50;">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="checkbox" id="confirmReminder" style="width: 18px; height: 18px; margin-left: 8px; cursor: pointer;">
-                        <span style="color: #2c3e50; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-bell"></i> تفعيل التذكير بالبريد
-                        </span>
+                <div style="background:#e8f5e9;padding:12px;border-radius:10px;margin-bottom:15px;border:2px dashed #4caf50;">
+                    <label style="display:flex;align-items:center;cursor:pointer;">
+                        <input type="checkbox" id="confirmReminder" style="width:18px;height:18px;margin-left:8px;cursor:pointer;">
+                        <span style="color:#2c3e50;font-weight:600;font-size:14px;"><i class="fas fa-bell"></i> تفعيل التذكير بالبريد</span>
                     </label>
-                    
-                    <div id="confirmEmailField" style="display: none; margin-top: 12px;">
-                        <input type="email" id="confirmEmail" placeholder="example@email.com" 
-                            style="width: 100%; padding: 10px; border: 2px solid #4caf50; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                    <div id="confirmEmailField" style="display:none;margin-top:12px;">
+                        <input type="email" id="confirmEmail" placeholder="example@email.com" style="width:100%;padding:10px;border:2px solid #4caf50;border-radius:8px;font-size:14px;box-sizing:border-box;">
                     </div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-                    <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 600;">
-                        ✅ تأكيد
-                    </button>
-                    <button type="button" id="cancelConfirmBtn" style="padding: 12px; background: #e0e0e0; color: #666; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 600;">
-                        ❌ إلغاء
-                    </button>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <button type="submit" style="padding:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;">✅ تأكيد</button>
+                    <button type="button" id="cancelConfirmBtn" style="padding:12px;background:#e0e0e0;color:#666;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;">❌ إلغاء</button>
                 </div>
             </form>
-            
         </div>
-        
-        <style>
-            @keyframes slideUp {
-                from { transform: translateY(30px); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
-            }
-            #confirmModal input:focus, 
-            #confirmModal select:focus, 
-            #confirmModal textarea:focus {
-                outline: none;
-                border-color: #667eea !important;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            }
-            @media (max-width: 768px) {
-                #confirmModal > div {
-                    padding: 20px !important;
-                    margin: auto;
-                }
-            }
-        </style>
     `;
     
     document.body.appendChild(modal);
-    
-    // ✅ منع السكرول في الخلفية
     document.body.style.overflow = 'hidden';
     
     const checkbox = modal.querySelector('#confirmReminder');
@@ -722,7 +654,7 @@ function showAppointmentConfirmModal(appointmentData, originalText) {
     
     modal.querySelector('#cancelConfirmBtn').onclick = () => {
         modal.remove();
-        document.body.style.overflow = ''; // ✅ إعادة السكرول
+        document.body.style.overflow = '';
     };
     
     modal.querySelector('#confirmForm').onsubmit = async (e) => {
@@ -731,9 +663,6 @@ function showAppointmentConfirmModal(appointmentData, originalText) {
     };
 }
 
-// ==========================================
-// حفظ الموعد المؤكد
-// ==========================================
 async function saveConfirmedAppointment(modal) {
     const finalData = {
         title: modal.querySelector('#confirmTitle').value,
@@ -760,7 +689,7 @@ async function saveConfirmedAppointment(modal) {
         
         if (data.success) {
             modal.remove();
-            document.body.style.overflow = ''; // ✅ إعادة السكرول
+            document.body.style.overflow = '';
             alert('✅ تم إضافة الموعد بنجاح!');
             document.getElementById('appointmentForm').reset();
             await loadAppointments();
@@ -773,9 +702,6 @@ async function saveConfirmedAppointment(modal) {
     }
 }
 
-// ==========================================
-// تعديل موعد
-// ==========================================
 async function editAppointment(id) {
     try {
         const token = localStorage.getItem('token');
@@ -801,55 +727,36 @@ async function editAppointment(id) {
         
         const modal = document.createElement('div');
         modal.innerHTML = `
-            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px;">
-                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;">
-                    
-                    <h2 style="margin: 0 0 20px 0; color: #2c3e50;">✏️ تعديل الموعد</h2>
-                    
+            <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;">
+                <div style="background:white;padding:30px;border-radius:15px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;">
+                    <h2 style="margin:0 0 20px 0;color:#2c3e50;">✏️ تعديل الموعد</h2>
                     <form id="editForm">
-                        
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">📝 العنوان:</label>
-                        <input type="text" id="editTitle" value="${appointment.title}" required 
-                            style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
-                        
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">📅 التاريخ:</label>
-                        <input type="date" id="editDate" value="${dateStr}" required 
-                            style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
-                        
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">⏰ الوقت:</label>
-                        <input type="time" id="editTime" value="${appointment.time}" required 
-                            style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
-                        
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">📄 الوصف:</label>
-                        <textarea id="editDescription" rows="3" 
-                            style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">${appointment.description || ''}</textarea>
-                        
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">🌍 المنطقة الزمنية:</label>
-                        <select id="editTimezone" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
-                            <option value="Europe/Berlin" ${(appointment.timezone || 'Europe/Berlin') === 'Europe/Berlin' ? 'selected' : ''}>برلين</option>
-                            <option value="Asia/Riyadh" ${appointment.timezone === 'Asia/Riyadh' ? 'selected' : ''}>الرياض</option>
-                            <option value="Asia/Dubai" ${appointment.timezone === 'Asia/Dubai' ? 'selected' : ''}>دبي</option>
-                            <option value="Africa/Cairo" ${appointment.timezone === 'Africa/Cairo' ? 'selected' : ''}>القاهرة</option>
+                        <label style="display:block;margin-bottom:5px;font-weight:bold;">📝 العنوان:</label>
+                        <input type="text" id="editTitle" value="${appointment.title}" required style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;">
+                        <label style="display:block;margin-bottom:5px;font-weight:bold;">📅 التاريخ:</label>
+                        <input type="date" id="editDate" value="${dateStr}" required style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;">
+                        <label style="display:block;margin-bottom:5px;font-weight:bold;">⏰ الوقت:</label>
+                        <input type="time" id="editTime" value="${appointment.time}" required style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;">
+                        <label style="display:block;margin-bottom:5px;font-weight:bold;">📄 الوصف:</label>
+                        <textarea id="editDescription" rows="3" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;">${appointment.description||''}</textarea>
+                        <label style="display:block;margin-bottom:5px;font-weight:bold;">🌍 المنطقة الزمنية:</label>
+                        <select id="editTimezone" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;">
+                            <option value="Europe/Berlin" ${(appointment.timezone||'Europe/Berlin')==='Europe/Berlin'?'selected':''}>برلين</option>
+                            <option value="Asia/Riyadh" ${appointment.timezone==='Asia/Riyadh'?'selected':''}>الرياض</option>
+                            <option value="Asia/Dubai" ${appointment.timezone==='Asia/Dubai'?'selected':''}>دبي</option>
+                            <option value="Africa/Cairo" ${appointment.timezone==='Africa/Cairo'?'selected':''}>القاهرة</option>
                         </select>
-                        
-                        <label style="display: block; margin-bottom: 10px;">
-                            <input type="checkbox" id="editReminderEnabled" ${appointment.reminderEnabled ? 'checked' : ''}>
+                        <label style="display:block;margin-bottom:10px;">
+                            <input type="checkbox" id="editReminderEnabled" ${appointment.reminderEnabled?'checked':''}>
                             🔔 تفعيل التذكير بالبريد
                         </label>
-                        
-                        <div id="editEmailField" style="display: ${appointment.reminderEnabled ? 'block' : 'none'}; margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">📧 البريد الإلكتروني:</label>
-                            <input type="email" id="editReminderEmail" value="${defaultEmail}" 
-                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+                        <div id="editEmailField" style="display:${appointment.reminderEnabled?'block':'none'};margin-bottom:15px;">
+                            <label style="display:block;margin-bottom:5px;font-weight:bold;">📧 البريد الإلكتروني:</label>
+                            <input type="email" id="editReminderEmail" value="${defaultEmail}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;">
                         </div>
-                        
-                        <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button type="submit" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                                💾 حفظ
-                            </button>
-                            <button type="button" id="cancelBtn" style="flex: 1; padding: 12px; background: #999; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                                ❌ إلغاء
-                            </button>
+                        <div style="display:flex;gap:10px;margin-top:20px;">
+                            <button type="submit" style="flex:1;padding:12px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:16px;">💾 حفظ</button>
+                            <button type="button" id="cancelBtn" style="flex:1;padding:12px;background:#999;color:white;border:none;border-radius:8px;cursor:pointer;font-size:16px;">❌ إلغاء</button>
                         </div>
                     </form>
                 </div>
@@ -914,16 +821,11 @@ async function editAppointment(id) {
     }
 }
 
-// ==========================================
-// جلب البريد الإلكتروني من الحساب
-// ==========================================
 async function getUserEmail() {
     try {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/auth/profile`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {

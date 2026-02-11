@@ -146,28 +146,33 @@ function displayExpenses(expenses) {
         return;
     }
     
-    const html = expenses.map(expense => `
-        <div class="expense-item">
-            <div class="expense-info">
-                <span class="expense-category">${expense.category}</span>
-                <div class="expense-description">${expense.description || 'بدون وصف'}</div>
-                <div class="expense-date">
-                    <i class="fas fa-calendar"></i> 
-                    ${new Date(expense.date).toLocaleDateString('ar-SA')}
+    const html = expenses.map(expense => {
+        // ✅ تنسيق التاريخ بالإنجليزية
+        const dateObj = new Date(expense.date);
+        const formattedDate = dateObj.toLocaleDateString('en-GB');
+        
+        return `
+            <div class="expense-item">
+                <div class="expense-info">
+                    <span class="expense-category">${expense.category}</span>
+                    <div class="expense-description">${expense.description || 'بدون وصف'}</div>
+                    <div class="expense-date">
+                        <i class="fas fa-calendar"></i> 
+                        ${formattedDate}
+                    </div>
+                </div>
+                <div class="expense-amount">${expense.amount} ${userCurrency.symbol}</div>
+                <div class="expense-actions">
+                    <button class="btn btn-danger btn-sm" onclick="deleteExpense('${expense._id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
-            <div class="expense-amount">${expense.amount} ${userCurrency.symbol}</div>
-            <div class="expense-actions">
-                <button class="btn btn-danger btn-sm" onclick="deleteExpense('${expense._id}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
     container.innerHTML = html;
 }
-
 // ==========================================
 // حذف مصروف
 // ==========================================

@@ -677,5 +677,25 @@ function showToast(message, type = 'info') {
 }
 </script>
 
+<script>
+// ==========================================
+// إعادة التوجيه التلقائي للمستخدمين المسجلين
+// ==========================================
+(function() {
+    // تحقق من وجود token
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    if (token && user) {
+        console.log('✅ المستخدم مسجل دخول - إعادة التوجيه إلى app.html');
+        
+        // إعادة التوجيه فوراً
+        window.location.replace('/app.html');
+    } else {
+        console.log('ℹ️ المستخدم غير مسجل - عرض صفحة تسجيل الدخول');
+    }
+})();
+</script>
+
 </body>
 </html>

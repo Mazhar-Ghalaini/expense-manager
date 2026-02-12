@@ -2,7 +2,7 @@
   "name": "إدارة المصروفات الشخصية",
   "short_name": "المصروفات",
   "description": "تطبيق ذكي لإدارة المصروفات اليومية والمواعيد والتذكيرات",
-  "start_url": "/",
+  "start_url": "/app.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",

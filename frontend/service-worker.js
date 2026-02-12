@@ -1,7 +1,7 @@
 // ==========================================
 // إعدادات Service Worker
 // ==========================================
-const CACHE_VERSION = 'expenses-pwa-v1.0.0';
+const CACHE_VERSION = 'expenses-pwa-v1.0.1';
 const CACHE_NAME = `expenses-app-${CACHE_VERSION}`;
 
 // الملفات الأساسية (تُخزّن فوراً)
@@ -267,38 +267,6 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// ==========================================
-// 8. إعادة التوجيه للصفحة الصحيحة عند فتح PWA
-// ==========================================
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  // إذا كان الطلب للصفحة الرئيسية
-  if (url.pathname === '/' || url.pathname === '/index.html') {
-    // تحقق من وجود token
-    event.respondWith(
-      (async () => {
-        try {
-          const cache = await caches.open(CACHE_NAME);
-          
-          // محاولة جلب الصفحة
-          const response = await fetch(event.request);
-          
-          // إذا كان المستخدم مسجل دخول، أعد توجيهه
-          // (سيتم التحقق في الصفحة نفسها)
-          return response;
-          
-        } catch (error) {
-          // إذا لا يوجد إنترنت، ارجع من Cache
-          const cachedResponse = await cache.match(event.request);
-          return cachedResponse || cache.match('/app.html');
-        }
-      })()
-    );
-    return;
-  }
-  
-  // باقي الكود الموجود...
-});
+
 
 console.log('🚀 [Service Worker] تم تحميل Service Worker بنجاح!');

@@ -81,14 +81,6 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
 function checkAuth() {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
-
-    const currentPath = window.location.pathname;
-    const publicPages = ['/', '/index.html', '/register.html'];
-
-    if (!token && !publicPages.includes(currentPath)) {
-        window.location.replace('/index.html');
-    }
-
     
     if (!token || !user) {
         window.location.href = 'index.html';

@@ -98,7 +98,7 @@ const createDefaultSettings = async () => {
         homepage: {
           heroTitle: 'إدارة مصروفاتك بذكاء اصطناعي',
           heroDescription: 'تتبع مصروفاتك، نظم مواعيدك، واحصل على تقارير تفصيلية بكل سهولة باستخدام الذكاء الاصطناعي والأوامر الصوتية',
-          heroImage: 'https://via.placeholder.com/500x400/4a90e2/ffffff?text=Smart+Expense+Manager',
+          heroImage: '/icons/icon-512x512.png',
           ctaTitle: 'جاهز للبدء؟',
           ctaDescription: 'انضم لآلاف المستخدمين الذين يديرون مصروفاتهم بذكاء'
         },

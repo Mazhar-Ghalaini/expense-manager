@@ -233,13 +233,16 @@ html, body {
     justify-content: center;
     margin-top: 40px;
     animation: fadeInUp 1.4s ease;
+        
 }
 
 .hero-image img {
     max-width: 100%;
     border-radius: 15px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    
 }
+
 
 @keyframes fadeInUp {
     from {

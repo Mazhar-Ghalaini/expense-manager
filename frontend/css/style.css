@@ -1419,3 +1419,33 @@ html {
 .social-links a:hover {
     background: #667eea;
 }
+
+/* ==========================================
+   Toggle Password Button - للـ Modals
+========================================== */
+.toggle-password-modal {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #95a5a6;
+    font-size: 18px;
+    padding: 8px;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.toggle-password-modal:hover {
+    color: #667eea;
+}
+
+.toggle-password-modal:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.toggle-password-modal i {
+    pointer-events: none;
+}

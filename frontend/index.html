@@ -219,13 +219,34 @@
                     <label>البريد الإلكتروني</label>
                     <input type="email" id="loginEmail" required>
                 </div>
-                <div class="form-group">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="loginPassword" required>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                    <i class="fas fa-sign-in-alt"></i> دخول
-                </button>
+<div class="form-group">
+    <label>كلمة المرور</label>
+    <div style="position: relative;">
+        <input 
+            type="password" 
+            id="loginPassword" 
+            required
+            style="padding-left: 45px;"
+        >
+        <button 
+            type="button" 
+            class="toggle-password-modal" 
+            onclick="togglePasswordModal('loginPassword', this)"
+        >
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+</div>                <button type="submit" class="btn btn-primary btn-block">
+    <i class="fas fa-sign-in-alt"></i> دخول
+</button>
+
+<div style="text-align: center; margin-top: 15px;">
+    <a href="#" 
+       onclick="closeModal('loginModal'); showForgotPasswordModal(); return false;" 
+       style="color: #667eea; text-decoration: none; font-size: 14px;">
+        <i class="fas fa-key"></i> نسيت كلمة المرور؟
+    </a>
+</div>
                 <p class="modal-footer-text">
                     ليس لديك حساب؟ <a href="#" onclick="closeModal('loginModal'); showRegisterModal()">سجل الآن</a>
                 </p>
@@ -319,37 +340,56 @@
                     </small>
                 </div>
                 
-                <div class="form-group">
-                    <label>
-                        <i class="fas fa-lock"></i>
-                        كلمة المرور
-                    </label>
-                    <input 
-                        type="password" 
-                        id="registerPassword" 
-                        required 
-                        minlength="6"
-                        placeholder="أدخل كلمة مرور قوية"
-                    >
-                    <small style="color: #7f8c8d; font-size: 0.85rem;">
-                        يجب أن تكون 6 أحرف على الأقل
-                    </small>
-                </div>
+<div class="form-group">
+    <label>
+        <i class="fas fa-lock"></i>
+        كلمة المرور
+    </label>
+    <div style="position: relative;">
+        <input 
+            type="password" 
+            id="registerPassword" 
+            required 
+            minlength="6"
+            placeholder="أدخل كلمة مرور قوية"
+            style="padding-left: 45px;"
+        >
+        <button 
+            type="button" 
+            class="toggle-password-modal" 
+            onclick="togglePasswordModal('registerPassword', this)"
+        >
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+    <small style="color: #7f8c8d; font-size: 0.85rem;">
+        يجب أن تكون 6 أحرف على الأقل
+    </small>
+</div>
 
-                <div class="form-group">
-                    <label>
-                        <i class="fas fa-lock"></i>
-                        تأكيد كلمة المرور
-                    </label>
-                    <input 
-                        type="password" 
-                        id="registerPasswordConfirm" 
-                        required 
-                        minlength="6"
-                        placeholder="أعد إدخال كلمة المرور"
-                    >
-                </div>
-
+<div class="form-group">
+    <label>
+        <i class="fas fa-lock"></i>
+        تأكيد كلمة المرور
+    </label>
+    <div style="position: relative;">
+        <input 
+            type="password" 
+            id="registerPasswordConfirm" 
+            required 
+            minlength="6"
+            placeholder="أعد إدخال كلمة المرور"
+            style="padding-left: 45px;"
+        >
+        <button 
+            type="button" 
+            class="toggle-password-modal" 
+            onclick="togglePasswordModal('registerPasswordConfirm', this)"
+        >
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+</div>
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                         <input 
@@ -677,6 +717,88 @@ function showToast(message, type = 'info') {
 }
 </script>
 
-<script>
+<!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <span class="close" onclick="closeModal('forgotPasswordModal')">&times;</span>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                margin: 0 auto 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 40px;
+            ">
+                🔑
+            </div>
+            <h2 style="color: #2c3e50; margin: 0;">استعادة كلمة المرور</h2>
+            <p style="color: #7f8c8d; margin-top: 10px; font-size: 14px;">
+                أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور
+            </p>
+        </div>
+
+        <!-- Success Message (Hidden by default) -->
+        <div id="forgotPasswordSuccess" style="
+            display: none;
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        ">
+            <div style="font-size: 50px; margin-bottom: 15px;">✅</div>
+            <h3 style="color: #155724; margin: 0 0 10px 0;">تم إرسال الرابط!</h3>
+            <p style="color: #155724; margin: 0; font-size: 14px; line-height: 1.6;">
+                تحقق من صندوق الوارد في:<br>
+                <strong id="sentToEmail" style="color: #667eea;"></strong>
+            </p>
+            <p style="color: #856404; margin: 15px 0 0 0; font-size: 13px;">
+                ⚠️ لم تستلم الرسالة؟ تحقق من البريد المهمل (Spam)
+            </p>
+            <button 
+                onclick="closeModal('forgotPasswordModal')" 
+                class="btn btn-primary btn-block" 
+                style="margin-top: 20px;"
+            >
+                <i class="fas fa-check"></i> حسناً
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)">
+            <div class="form-group">
+                <label>
+                    <i class="fas fa-envelope"></i>
+                    البريد الإلكتروني
+                </label>
+                <input 
+                    type="email" 
+                    id="forgotEmail" 
+                    required 
+                    placeholder="example@email.com"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="forgotPasswordBtn">
+                <i class="fas fa-paper-plane"></i>
+                إرسال رابط الاستعادة
+            </button>
+
+            <p class="modal-footer-text">
+                تذكرت كلمة المرور؟ 
+                <a href="#" onclick="closeModal('forgotPasswordModal'); showLoginModal(); return false;">
+                    تسجيل الدخول
+                </a>
+            </p>
+        </form>
+    </div>
+</div>
+
 </body>
 </html>

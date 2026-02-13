@@ -355,4 +355,157 @@ router.post('/change-password', protect, async (req, res) => {
   }
 });
 
+// ==========================================
+// Forgot Password - طلب إعادة تعيين
+// ==========================================
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'الرجاء إدخال البريد الإلكتروني' 
+      });
+    }
+    
+    console.log('📧 طلب إعادة تعيين كلمة المرور:', email);
+    
+    // البحث عن المستخدم
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // ✅ نرسل نفس الرسالة سواء الـ Email موجود أو لا (أمان)
+    if (!user) {
+      console.log('⚠️ البريد غير موجود - لكن سنرسل رسالة عامة');
+      return res.json({
+        success: true,
+        message: 'إذا كان البريد الإلكتروني مسجلاً لدينا، سيتم إرسال رابط إعادة التعيين'
+      });
+    }
+    
+    // توليد Token فريد
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    // مدة الصلاحية: 5 دقائق
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    
+    // حفظ في قاعدة البيانات
+    const PasswordReset = require('../models/PasswordReset');
+    await PasswordReset.create({
+      userId: user._id,
+      email: user.email,
+      token,
+      expiresAt
+    });
+    
+    // إنشاء رابط إعادة التعيين
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password.html?token=${token}`;
+    
+    // إرسال Email
+    const { sendPasswordResetEmail } = require('../utils/emailService');
+    const emailResult = await sendPasswordResetEmail(user.email, user.name, resetLink);
+    
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'حدث خطأ في إرسال البريد الإلكتروني'
+      });
+    }
+    
+    console.log('✅ تم إرسال رابط إعادة التعيين بنجاح');
+    
+    res.json({
+      success: true,
+      message: 'تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني'
+    });
+    
+  } catch (error) {
+    console.error('❌ خطأ في forgot-password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'حدث خطأ في الخادم',
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// Reset Password - تنفيذ إعادة التعيين
+// ==========================================
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'الرجاء إدخال جميع البيانات المطلوبة'
+      });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
+      });
+    }
+    
+    console.log('🔐 محاولة إعادة تعيين كلمة المرور بـ Token');
+    
+    // البحث عن الـ Token
+    const PasswordReset = require('../models/PasswordReset');
+    const resetRequest = await PasswordReset.findOne({ 
+      token,
+      used: false,
+      expiresAt: { $gt: new Date() }
+    });
+    
+    if (!resetRequest) {
+      console.log('❌ Token غير صالح أو منتهي');
+      return res.status(400).json({
+        success: false,
+        message: 'الرابط غير صالح أو منتهي الصلاحية'
+      });
+    }
+    
+    // البحث عن المستخدم
+    const user = await User.findById(resetRequest.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'المستخدم غير موجود'
+      });
+    }
+    
+    // تحديث كلمة المرور
+    user.password = newPassword;
+    await user.save();
+    
+    // تعليم الـ Token كمستخدم
+    resetRequest.used = true;
+    await resetRequest.save();
+    
+    console.log('✅ تم تغيير كلمة المرور بنجاح');
+    
+    // إرسال Email تأكيد
+    const { sendPasswordChangedEmail } = require('../utils/emailService');
+    await sendPasswordChangedEmail(user.email, user.name);
+    
+    res.json({
+      success: true,
+      message: 'تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول'
+    });
+    
+  } catch (error) {
+    console.error('❌ خطأ في reset-password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'حدث خطأ في الخادم',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

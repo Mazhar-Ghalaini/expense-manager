@@ -36,9 +36,22 @@ function closeModal(modalId) {
     if (modal) {
         modal.classList.remove('active');
         document.body.style.overflow = 'auto';
+        
+        // Reset forgot password form when closing
+        if (modalId === 'forgotPasswordModal') {
+            const form = document.getElementById('forgotPasswordForm');
+            const success = document.getElementById('forgotPasswordSuccess');
+            const btn = document.getElementById('forgotPasswordBtn');
+            
+            if (form) form.style.display = 'block';
+            if (success) success.style.display = 'none';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال رابط الاستعادة';
+                btn.disabled = false;
+            }
+        }
     }
 }
-
 // ==========================================
 // Authentication Functions
 // ==========================================
@@ -541,3 +554,107 @@ console.log('%c مدير المصروفات الذكي ',
     'background: #4a90e2; color: white; font-size: 20px; padding: 10px; border-radius: 5px;');
 console.log('%c تطبيق إدارة المصروفات والمواعيد بالذكاء الاصطناعي ', 
     'color: #666; font-size: 14px;');
+
+// ==========================================
+// Toggle Password Visibility - للـ Modals
+// ==========================================
+function togglePasswordModal(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        button.style.color = '#667eea';
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        button.style.color = '#95a5a6';
+    }
+}
+
+// ==========================================
+// Forgot Password Modal Functions
+// ==========================================
+function showForgotPasswordModal() {
+    console.log('🔑 فتح نموذج استعادة كلمة المرور');
+    const modal = document.getElementById('forgotPasswordModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Reset form
+        document.getElementById('forgotPasswordSuccess').style.display = 'none';
+        document.getElementById('forgotPasswordForm').style.display = 'block';
+        const emailInput = document.getElementById('forgotEmail');
+        if (emailInput) emailInput.value = '';
+    } else {
+        console.error('❌ لم يتم العثور على forgotPasswordModal');
+    }
+}
+
+// ==========================================
+// Handle Forgot Password Submit
+// ==========================================
+async function handleForgotPassword(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('forgotEmail').value.trim();
+    const btn = document.getElementById('forgotPasswordBtn');
+    const originalText = btn.innerHTML;
+    
+    if (!email) {
+        showAlert('الرجاء إدخال البريد الإلكتروني', 'danger');
+        return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showAlert('الرجاء إدخال بريد إلكتروني صحيح', 'danger');
+        return;
+    }
+    
+    console.log('📧 إرسال طلب استعادة كلمة المرور:', email);
+    
+    // Disable button
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        console.log('📥 استجابة forgot-password:', data);
+        
+        if (data.success) {
+            // Hide form, show success message
+            document.getElementById('forgotPasswordForm').style.display = 'none';
+            document.getElementById('forgotPasswordSuccess').style.display = 'block';
+            document.getElementById('sentToEmail').textContent = email;
+            
+            console.log('✅ تم إرسال رابط إعادة التعيين بنجاح');
+            
+            // Show success alert
+            showAlert('✅ تم إرسال رابط الاستعادة إلى بريدك', 'success');
+            
+        } else {
+            showAlert(data.message || 'حدث خطأ أثناء الإرسال', 'danger');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+        
+    } catch (error) {
+        console.error('❌ خطأ في forgot-password:', error);
+        showAlert('حدث خطأ في الاتصال بالخادم', 'danger');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}

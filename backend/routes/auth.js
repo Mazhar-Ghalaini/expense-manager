@@ -399,8 +399,14 @@ router.post('/forgot-password', async (req, res) => {
       expiresAt
     });
     
-    // إنشاء رابط إعادة التعيين
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password.html?token=${token}`;
+// تحديد الـ Frontend URL بشكل ديناميكي
+const frontendURL = process.env.FRONTEND_URL 
+    || (req.get('origin')) 
+    || 'http://localhost:5000';
+
+const resetLink = `${frontendURL}/reset-password.html?token=${token}`;
+
+console.log('🔗 رابط إعادة التعيين:', resetLink);
     
     // إرسال Email
     const { sendPasswordResetEmail } = require('../utils/emailService');

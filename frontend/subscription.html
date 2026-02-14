@@ -6,6 +6,10 @@
     <title>الاشتراك - موظفك الشخصي</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+
 <!-- تصميم صفحة index فقط - سيتجاوز الكل -->
 <link rel="stylesheet" href="css/index.css">
     <style>
@@ -500,7 +504,7 @@
                     <li><a href="./index.html#features">المميزات</a></li>
                     <li><a href="subscription.html" class="active">الاشتراك</a></li>
                     <li><a href="contact.html">تواصل معنا</a></li>
-                    <li><a href="#" onclick="checkLoginStatus() ">دخول / 
+                    <li><a href="login.html" onclick="checkLoginStatus() ">دخول / 
 تسجيل</a></li>
                     
                     
@@ -647,41 +651,8 @@
         </div>
     </footer>
     
-<!-- Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('loginModal')">&times;</span>
-            <h2>تسجيل الدخول</h2>
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label>البريد الإلكتروني</label>
-                    <input type="email" id="loginEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="loginPassword" required>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                    <i class="fas fa-sign-in-alt"></i> دخول
-                </button>
-                <p class="modal-footer-text">
-                    ليس لديك حساب؟ <a href="#" onclick="closeModal('loginModal'); showRegisterModal()">سجل الآن</a>
-                </p>
-            </form>
-        </div>
-    </div>
 
     <script>
-
-
-        function checkLoginStatus() {
-            const token = localStorage.getItem('token');
-            if (token) {
-                window.location.href = 'app.html';
-            } else {
-                window.location.href = 'index.html';
-            }
-        }
 
         function subscribe() {
             const token = localStorage.getItem('token');

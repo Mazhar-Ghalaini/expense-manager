@@ -107,6 +107,20 @@ async function handleLogin(event) {
             
         } else {
             showAlert(data.message || 'خطأ في تسجيل الدخول', 'danger');
+            
+            // ✅✅✅ إضافة: إظهار زر إعادة الإرسال إذا كان الحساب غير مفعّل
+            if (data.needsVerification) {
+                console.log('⚠️ الحساب غير مفعّل');
+                
+                const verificationAlert = document.getElementById('verificationAlert');
+                if (verificationAlert) {
+                    verificationAlert.style.display = 'block';
+                    
+                    // حفظ البريد للاستخدام في إعادة الإرسال
+                    sessionStorage.setItem('pendingEmail', data.email || email);
+                }
+            }
+            
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }
@@ -658,3 +672,58 @@ async function handleForgotPassword(event) {
         btn.disabled = false;
     }
 }
+
+// ==========================================
+// إعادة إرسال رابط التفعيل
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const resendBtn = document.getElementById('resendBtn');
+    
+    if (resendBtn) {
+        resendBtn.addEventListener('click', async function() {
+            const email = sessionStorage.getItem('pendingEmail');
+            
+            if (!email) {
+                showAlert('الرجاء إدخال بريدك الإلكتروني أولاً', 'danger');
+                return;
+            }
+            
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/resend-verification`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ تم إرسال رابط التفعيل! تحقق من بريدك', 'success');
+                    btn.innerHTML = '✅ تم الإرسال';
+                    
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }, 30000); // 30 ثانية
+                } else {
+                    showAlert(data.message || 'فشل الإرسال', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+                
+            } catch (error) {
+                console.error('خطأ في إعادة الإرسال:', error);
+                showAlert('خطأ في الاتصال', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    }
+});

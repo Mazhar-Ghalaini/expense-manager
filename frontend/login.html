@@ -416,6 +416,19 @@
     تسجيل الدخول
 </button>
 
+<button type="submit" class="btn">تسجيل الدخول</button>
+
+<!-- ✅ رسالة تنبيه للحسابات غير المفعّلة -->
+<div id="verificationAlert" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 10px; border-left: 4px solid #ffc107;">
+  <p style="margin: 0 0 10px 0; color: #856404;">
+    <strong>⚠️ حسابك غير مفعّل</strong><br>
+    الرجاء التحقق من بريدك الإلكتروني لتفعيل الحساب
+  </p>
+  <button type="button" id="resendBtn" class="btn" style="background: #ffc107; color: #000; padding: 10px 20px;">
+    📧 إعادة إرسال رابط التفعيل
+  </button>
+</div>
+
 <div style="text-align: center; margin-top: 15px;">
     <a href="#" 
        onclick="showForgotPasswordModal(); return false;" 

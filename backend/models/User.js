@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: [true, 'رقم الهاتف مطلوب'],
+    required: false,
     trim: true
   },
   role: {

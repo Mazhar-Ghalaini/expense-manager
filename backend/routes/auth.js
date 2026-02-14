@@ -294,11 +294,17 @@ router.post('/register', generalLimiter, async (req, res) => {
     await user.save();
     
     // ✅ إرسال بريد التحقق
-    const frontendURL = process.env.FRONTEND_URL 
-        || (req.get('origin')) 
-        || (req.protocol + '://' + req.get('host'))
-        || 'http://localhost:3000';
-    
+const frontendURL = process.env.FRONTEND_URL;
+
+if (!frontendURL) {
+  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+  return res.status(500).json({
+    success: false,
+    message: 'خطأ في إعدادات الخادم'
+  });
+}
+
+console.log('🌐 Frontend URL:', frontendURL);    
     const verificationLink = `${frontendURL}/verify-email.html?token=${verificationToken}`;
     
     const { sendVerificationEmail } = require('../utils/emailService');
@@ -423,11 +429,17 @@ router.post('/resend-verification', generalLimiter, async (req, res) => {
     await user.save();
     
     // إرسال البريد
-    const frontendURL = process.env.FRONTEND_URL 
-        || (req.get('origin')) 
-        || (req.protocol + '://' + req.get('host'))
-        || 'http://localhost:3000';
-    
+const frontendURL = process.env.FRONTEND_URL;
+
+if (!frontendURL) {
+  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+  return res.status(500).json({
+    success: false,
+    message: 'خطأ في إعدادات الخادم'
+  });
+}
+
+console.log('🌐 Frontend URL:', frontendURL);    
     const verificationLink = `${frontendURL}/verify-email.html?token=${verificationToken}`;
     
     const { sendVerificationEmail } = require('../utils/emailService');
@@ -549,11 +561,17 @@ router.post('/login', loginLimiter, loginProtection, async (req, res) => {
         await user.save();
         
         // إرسال البريد
-        const frontendURL = process.env.FRONTEND_URL 
-            || (req.get('origin')) 
-            || (req.protocol + '://' + req.get('host'))
-            || 'http://localhost:3000';
-        
+const frontendURL = process.env.FRONTEND_URL;
+
+if (!frontendURL) {
+  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+  return res.status(500).json({
+    success: false,
+    message: 'خطأ في إعدادات الخادم'
+  });
+}
+
+console.log('🌐 Frontend URL:', frontendURL);        
         const verificationLink = `${frontendURL}/verify-email.html?token=${verificationToken}`;
         
         console.log('🔗 رابط التفعيل:', verificationLink);
@@ -654,11 +672,17 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
       expiresAt
     });
     
-    const frontendURL = process.env.FRONTEND_URL 
-        || (req.get('origin')) 
-        || (req.protocol + '://' + req.get('host'))
-        || 'http://localhost:5000';
-    
+const frontendURL = process.env.FRONTEND_URL;
+
+if (!frontendURL) {
+  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+  return res.status(500).json({
+    success: false,
+    message: 'خطأ في إعدادات الخادم'
+  });
+}
+
+console.log('🌐 Frontend URL:', frontendURL);    
     const resetLink = `${frontendURL}/reset-password.html?token=${token}`;
     
     console.log('🔗 رابط إعادة التعيين:', resetLink);

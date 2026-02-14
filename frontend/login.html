@@ -350,6 +350,11 @@
     pointer-events: none;
 }
     </style>
+
+<!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js"></script>
+</head>
+
 </head>
 <body>
     <div class="login-container">
@@ -408,6 +413,13 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
+                </div>
+
+                <!-- ✅ زر تسجيل الدخول (واحد فقط) -->
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+<!-- reCAPTCHA Widget -->
+                <div style="margin-bottom: 20px; display: flex; justify-content: center;">
+                    <div class="g-recaptcha" data-sitekey="6Le6bGssAAAAABAmbjeZwcRAxM6XbK7OIFzV7rOu"></div>
                 </div>
 
                 <!-- ✅ زر تسجيل الدخول (واحد فقط) -->

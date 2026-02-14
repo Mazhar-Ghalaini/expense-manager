@@ -7,6 +7,57 @@ const { protect } = require('../middleware/auth');
 const { getCurrency } = require('../config/currencies');
 
 // ==========================================
+// ✅ دالة التحقق من reCAPTCHA
+// ==========================================
+async function verifyRecaptcha(token) {
+  if (!token) {
+    return { success: false, message: 'رمز reCAPTCHA مفقود' };
+  }
+  
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  
+  if (!secretKey) {
+    console.error('❌ RECAPTCHA_SECRET_KEY غير موجود');
+    return { success: false, message: 'خطأ في إعدادات الخادم' };
+  }
+  
+  try {
+    const axios = require('axios');
+    
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      null,
+      {
+        params: {
+          secret: secretKey,
+          response: token
+        }
+      }
+    );
+    
+    console.log('🔍 reCAPTCHA Response:', response.data);
+    
+    if (response.data.success) {
+      return { success: true };
+    } else {
+      return { 
+        success: false, 
+        message: 'فشل التحقق من reCAPTCHA',
+        errors: response.data['error-codes']
+      };
+    }
+    
+  } catch (error) {
+    console.error('❌ خطأ في التحقق من reCAPTCHA:', error.message);
+    return { 
+      success: false, 
+      message: 'خطأ في الاتصال بخدمة reCAPTCHA' 
+    };
+  }
+}
+
+
+// ==========================================
 // إعدادات الحماية
 // ==========================================
 const MAX_LOGIN_ATTEMPTS_EMAIL = 5;      // 5 محاولات للإيميل
@@ -242,6 +293,27 @@ router.post('/register', generalLimiter, async (req, res) => {
     const { name, email, password, phone, currencyCode } = req.body;
     
     console.log('📝 طلب تسجيل جديد:', { name, email, phone, currencyCode });
+
+    // ✅ التحقق من reCAPTCHA
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    
+    if (!recaptchaResult.success) {
+      console.log('❌ reCAPTCHA فشل:', recaptchaResult.message);
+      return res.status(400).json({
+        success: false,
+        message: recaptchaResult.message || 'فشل التحقق من أنك لست روبوت'
+      });
+    }
+    
+    console.log('✅ reCAPTCHA نجح');
+    
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'الرجاء ملء جميع الحقول المطلوبة' 
+      });
+    }
+
     
     if (!name || !email || !password || !phone) {
       return res.status(400).json({ 
@@ -474,8 +546,24 @@ router.post('/login', loginLimiter, loginProtection, async (req, res) => {
   try {
     console.log('🔐 محاولة تسجيل دخول:', req.body.email);
     
-    const { email, password } = req.body;
+    // ✅ أخذ جميع المتغيرات دفعة واحدة
+    const { email, password, recaptchaToken } = req.body;
+    
+    // التحقق من reCAPTCHA
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    
+    if (!recaptchaResult.success) {
+      console.log('❌ reCAPTCHA فشل:', recaptchaResult.message);
+      return res.status(400).json({
+        success: false,
+        message: recaptchaResult.message || 'فشل التحقق من أنك لست روبوت'
+      });
+    }
+    
+    console.log('✅ reCAPTCHA نجح');
+    
     const attemptData = req.loginAttemptData;
+    
 
     if (!email || !password) {
       return res.status(400).json({ 

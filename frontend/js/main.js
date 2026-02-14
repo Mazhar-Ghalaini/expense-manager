@@ -62,7 +62,26 @@ async function handleLogin(event) {
     
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
+// ✅ التحقق من تحميل reCAPTCHA
+if (typeof grecaptcha === 'undefined') {
+    showAlert('⚠️ جاري تحميل نظام الحماية، الرجاء الانتظار...', 'warning');
     
+    // إعادة المحاولة بعد ثانية
+    setTimeout(() => {
+        event.target.dispatchEvent(new Event('submit'));
+    }, 1000);
+    
+    return;
+}
+
+// الحصول على reCAPTCHA token
+const recaptchaResponse = grecaptcha.getResponse();
+
+if (!recaptchaResponse) {
+    showAlert('⚠️ الرجاء التحقق من أنك لست روبوت', 'warning');
+    return;
+}
+
     console.log('🔐 محاولة تسجيل الدخول:', email);
     
     if (!email || !password) {
@@ -81,7 +100,7 @@ async function handleLogin(event) {
             headers: { 
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, recaptchaToken: recaptchaResponse})
         });
         
         const data = await response.json();
@@ -107,7 +126,9 @@ async function handleLogin(event) {
             
         } else {
             showAlert(data.message || 'خطأ في تسجيل الدخول', 'danger');
-            
+                // إعادة تعيين reCAPTCHA
+            grecaptcha.reset();
+
             // ✅✅✅ إضافة: إظهار زر إعادة الإرسال إذا كان الحساب غير مفعّل
             if (data.needsVerification) {
                 console.log('⚠️ الحساب غير مفعّل');
@@ -142,6 +163,25 @@ async function handleRegister(event) {
     const password = document.getElementById('registerPassword').value;
     const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
     const currencyCode = document.getElementById('registerCurrency').value;
+
+    // ✅ الحصول على reCAPTCHA token
+    const recaptchaResponse = grecaptcha.getResponse();
+    
+    if (!recaptchaResponse) {
+        showAlert('⚠️ الرجاء التحقق من أنك لست روبوت', 'warning');
+        return;
+    }
+    
+    // ... إرسال الطلب
+    body: JSON.stringify({ 
+        name, 
+        email, 
+        password,
+        phone,
+        currencyCode,
+        recaptchaToken: recaptchaResponse 
+    })
+
     
     console.log('📝 محاولة التسجيل:', { name, email, phone, currencyCode });
     

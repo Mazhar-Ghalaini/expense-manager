@@ -51,6 +51,10 @@
 <meta name="description" content="تطبيق ذكي لإدارة المصروفات اليومية والمواعيد والتذكيرات">
 <meta name="keywords" content="مصروفات, إدارة مالية, تذكيرات, مواعيد, ذكاء اصطناعي">
     
+<!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js"></script>
+</head>
+
 </head>
 <body>
     <!-- Nav Overlay -->
@@ -402,7 +406,10 @@
                         <span>أوافق على <a href="#" style="color: #667eea;">الشروط والأحكام</a></span>
                     </label>
                 </div>
-                
+                                <!-- reCAPTCHA Widget -->
+                <div style="margin-bottom: 20px; display: flex; justify-content: center;">
+                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                </div>
                 <button 
                     type="submit" 
                     class="btn btn-primary btn-block"

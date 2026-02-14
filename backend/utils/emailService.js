@@ -169,3 +169,91 @@ module.exports = {
     sendPasswordResetEmail,
     sendPasswordChangedEmail
 };
+
+// إرسال بريد تأكيد التسجيل
+const sendVerificationEmail = async (email, name, verificationLink) => {
+  const mailOptions = {
+    from: `"${process.env.EMAIL_FROM_NAME || 'Expense Manager'}" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: 'تأكيد بريدك الإلكتروني - Expense Manager',
+    html: `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+          .header h1 { margin: 0; font-size: 28px; }
+          .content { padding: 40px 30px; }
+          .content h2 { color: #333; font-size: 22px; margin-bottom: 20px; }
+          .content p { color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
+          .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; margin: 20px 0; }
+          .button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+          .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #999; font-size: 14px; }
+          .warning { background: #fff3cd; border-right: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
+          .icon { font-size: 50px; margin-bottom: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="icon">✉️</div>
+            <h1>مرحباً بك في Expense Manager!</h1>
+          </div>
+          
+          <div class="content">
+            <h2>مرحباً ${name}،</h2>
+            
+            <p>شكراً لتسجيلك معنا! نحن سعداء بانضمامك إلى عائلة Expense Manager.</p>
+            
+            <p>للبدء في استخدام حسابك، الرجاء تأكيد بريدك الإلكتروني بالنقر على الزر أدناه:</p>
+            
+            <div style="text-align: center;">
+              <a href="${verificationLink}" class="button">✅ تأكيد البريد الإلكتروني</a>
+            </div>
+            
+            <div class="warning">
+              <strong>⚠️ ملاحظة مهمة:</strong><br>
+              هذا الرابط صالح لمدة 24 ساعة فقط.
+            </div>
+            
+            <p>إذا لم تقم بالتسجيل، يمكنك تجاهل هذه الرسالة.</p>
+            
+            <p style="margin-top: 30px; color: #999; font-size: 14px;">
+              إذا لم يعمل الزر، انسخ الرابط التالي والصقه في المتصفح:<br>
+              <a href="${verificationLink}" style="color: #667eea; word-break: break-all;">${verificationLink}</a>
+            </p>
+          </div>
+          
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Expense Manager. جميع الحقوق محفوظة.</p>
+            <p style="margin-top: 10px;">
+              🌐 <a href="https://your-website.com" style="color: #667eea; text-decoration: none;">الموقع الإلكتروني</a> | 
+              📧 <a href="mailto:support@your-website.com" style="color: #667eea; text-decoration: none;">الدعم الفني</a>
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('✅ تم إرسال بريد التحقق إلى:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ خطأ في إرسال بريد التحقق:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ✅ تصدير الدالة
+module.exports = {
+  transporter,
+  sendPasswordResetEmail,
+  sendPasswordChangedEmail,
+  sendVerificationEmail // ← أضف هذا
+};

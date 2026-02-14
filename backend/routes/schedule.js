@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const Expense = require('../models/Expense');
 const Appointment = require('../models/Appointment');
 const Reminder = require('../models/Reminder');
@@ -64,121 +64,188 @@ router.get('/export', auth, async (req, res) => {
 
     console.log(`📈 تم جلب: ${expenses.length} مصروف، ${appointments.length} موعد، ${reminders.length} تذكير`);
 
-    // إنشاء ملف Excel
-    const wb = XLSX.utils.book_new();
+    // إنشاء Workbook
+    const workbook = new ExcelJS.Workbook();
 
     // ===================================
     // Sheet 1: الملخص
     // ===================================
-    const summaryData = [
-      ['📊 ملخص الجدول اليومي', ''],
-      ['التاريخ:', new Date().toLocaleDateString('ar-SA')],
-      ['الوقت:', new Date().toLocaleTimeString('ar-SA')],
-      [],
-      ['📈 الإحصائيات:', ''],
-      ['عدد المصروفات:', expenses.length],
-      ['عدد المواعيد:', appointments.length],
-      ['عدد التذكيرات:', reminders.length],
-      [],
-      ['💰 المصروفات:', ''],
-      ['المجموع الكلي:', `${expenses.reduce((sum, e) => sum + e.amount, 0)} يورو`],
-      [],
-      ['📌 الحالة:', ''],
-      ['التذكيرات المكتملة:', reminders.filter(r => r.completed).length],
-      ['التذكيرات القادمة:', reminders.filter(r => !r.completed).length]
+    const summarySheet = workbook.addWorksheet('الملخص');
+    
+    summarySheet.columns = [
+      { header: 'العنصر', key: 'label', width: 25 },
+      { header: 'القيمة', key: 'value', width: 20 }
     ];
-    
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-    wsSummary['!cols'] = [{ wch: 25 }, { wch: 20 }];
-    
-    // تنسيق الخلايا
-    wsSummary['A1'].s = { font: { bold: true, sz: 16 } };
-    
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'الملخص');
+
+    // البيانات
+    summarySheet.addRow({ label: '📊 ملخص الجدول اليومي', value: '' });
+    summarySheet.addRow({ label: 'التاريخ:', value: new Date().toLocaleDateString('ar-SA') });
+    summarySheet.addRow({ label: 'الوقت:', value: new Date().toLocaleTimeString('ar-SA') });
+    summarySheet.addRow({ label: '', value: '' });
+    summarySheet.addRow({ label: '📈 الإحصائيات:', value: '' });
+    summarySheet.addRow({ label: 'عدد المصروفات:', value: expenses.length });
+    summarySheet.addRow({ label: 'عدد المواعيد:', value: appointments.length });
+    summarySheet.addRow({ label: 'عدد التذكيرات:', value: reminders.length });
+    summarySheet.addRow({ label: '', value: '' });
+    summarySheet.addRow({ label: '💰 المصروفات:', value: '' });
+    summarySheet.addRow({ label: 'المجموع الكلي:', value: `${expenses.reduce((sum, e) => sum + e.amount, 0)} يورو` });
+    summarySheet.addRow({ label: '', value: '' });
+    summarySheet.addRow({ label: '📌 الحالة:', value: '' });
+    summarySheet.addRow({ label: 'التذكيرات المكتملة:', value: reminders.filter(r => r.completed).length });
+    summarySheet.addRow({ label: 'التذكيرات القادمة:', value: reminders.filter(r => !r.completed).length });
+
+    // تنسيق الرأس
+    summarySheet.getRow(1).font = { bold: true, size: 16 };
+    summarySheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4CAF50' }
+    };
 
     // ===================================
     // Sheet 2: المصروفات
     // ===================================
+    const expensesSheet = workbook.addWorksheet('المصروفات');
+    
     if (expenses.length > 0) {
-      const expData = [['التاريخ', 'الوقت', 'المبلغ', 'الفئة', 'الوصف']];
-      
+      expensesSheet.columns = [
+        { header: 'التاريخ', key: 'date', width: 15 },
+        { header: 'الوقت', key: 'time', width: 10 },
+        { header: 'المبلغ', key: 'amount', width: 12 },
+        { header: 'الفئة', key: 'category', width: 15 },
+        { header: 'الوصف', key: 'description', width: 30 }
+      ];
+
+      // تنسيق الرأس
+      expensesSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      expensesSheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4CAF50' }
+      };
+
       expenses.forEach(exp => {
-        expData.push([
-          new Date(exp.date).toLocaleDateString('ar-SA'),
-          new Date(exp.date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-          `${exp.amount} يورو`,
-          exp.category,
-          exp.description || '-'
-        ]);
+        expensesSheet.addRow({
+          date: new Date(exp.date).toLocaleDateString('ar-SA'),
+          time: new Date(exp.date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+          amount: `${exp.amount} يورو`,
+          category: exp.category,
+          description: exp.description || '-'
+        });
       });
-      
+
       const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-      expData.push([]);
-      expData.push(['', '', `المجموع: ${total} يورو`, '', '']);
-      
-      const wsExp = XLSX.utils.aoa_to_sheet(expData);
-      wsExp['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 30 }];
-      XLSX.utils.book_append_sheet(wb, wsExp, 'المصروفات');
+      expensesSheet.addRow({});
+      const totalRow = expensesSheet.addRow({
+        date: '',
+        time: '',
+        amount: `المجموع: ${total} يورو`,
+        category: '',
+        description: ''
+      });
+      totalRow.font = { bold: true };
+      totalRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFEB3B' }
+      };
     } else {
-      const wsExp = XLSX.utils.aoa_to_sheet([['لا توجد مصروفات لهذا اليوم']]);
-      XLSX.utils.book_append_sheet(wb, wsExp, 'المصروفات');
+      expensesSheet.addRow({ message: 'لا توجد مصروفات لهذا اليوم' });
     }
 
     // ===================================
     // Sheet 3: المواعيد
     // ===================================
+    const appointmentsSheet = workbook.addWorksheet('المواعيد');
+    
     if (appointments.length > 0) {
-      const aptData = [['التاريخ', 'الوقت', 'العنوان', 'الوصف', 'المنطقة الزمنية']];
-      
+      appointmentsSheet.columns = [
+        { header: 'التاريخ', key: 'date', width: 15 },
+        { header: 'الوقت', key: 'time', width: 10 },
+        { header: 'العنوان', key: 'title', width: 25 },
+        { header: 'الوصف', key: 'description', width: 30 },
+        { header: 'المنطقة الزمنية', key: 'timezone', width: 20 }
+      ];
+
+      // تنسيق الرأس
+      appointmentsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      appointmentsSheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2196F3' }
+      };
+
       appointments.forEach(apt => {
-        aptData.push([
-          new Date(apt.date).toLocaleDateString('ar-SA'),
-          apt.time,
-          apt.title,
-          apt.description || '-',
-          apt.timezone || 'Europe/Berlin'
-        ]);
+        appointmentsSheet.addRow({
+          date: new Date(apt.date).toLocaleDateString('ar-SA'),
+          time: apt.time,
+          title: apt.title,
+          description: apt.description || '-',
+          timezone: apt.timezone || 'Europe/Berlin'
+        });
       });
-      
-      const wsApt = XLSX.utils.aoa_to_sheet(aptData);
-      wsApt['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 25 }, { wch: 30 }, { wch: 20 }];
-      XLSX.utils.book_append_sheet(wb, wsApt, 'المواعيد');
     } else {
-      const wsApt = XLSX.utils.aoa_to_sheet([['لا توجد مواعيد لهذا اليوم']]);
-      XLSX.utils.book_append_sheet(wb, wsApt, 'المواعيد');
+      appointmentsSheet.addRow({ message: 'لا توجد مواعيد لهذا اليوم' });
     }
 
     // ===================================
     // Sheet 4: التذكيرات
     // ===================================
+    const remindersSheet = workbook.addWorksheet('التذكيرات');
+    
     if (reminders.length > 0) {
-      const remData = [['التاريخ', 'الوقت', 'العنوان', 'الوصف', 'الحالة', 'البريد الإلكتروني']];
-      
+      remindersSheet.columns = [
+        { header: 'التاريخ', key: 'date', width: 15 },
+        { header: 'الوقت', key: 'time', width: 10 },
+        { header: 'العنوان', key: 'title', width: 25 },
+        { header: 'الوصف', key: 'description', width: 30 },
+        { header: 'الحالة', key: 'status', width: 15 },
+        { header: 'البريد الإلكتروني', key: 'email', width: 25 }
+      ];
+
+      // تنسيق الرأس
+      remindersSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      remindersSheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFF9800' }
+      };
+
       reminders.forEach(rem => {
-        remData.push([
-          new Date(rem.date).toLocaleDateString('ar-SA'),
-          rem.time,
-          rem.title,
-          rem.description || '-',
-          rem.completed ? '✅ مكتمل' : '⏳ قيد الانتظار',
-          rem.reminderEnabled && rem.reminderEmail ? rem.reminderEmail : '-'
-        ]);
+        remindersSheet.addRow({
+          date: new Date(rem.date).toLocaleDateString('ar-SA'),
+          time: rem.time,
+          title: rem.title,
+          description: rem.description || '-',
+          status: rem.completed ? '✅ مكتمل' : '⏳ قيد الانتظار',
+          email: rem.reminderEnabled && rem.reminderEmail ? rem.reminderEmail : '-'
+        });
       });
-      
-      const wsRem = XLSX.utils.aoa_to_sheet(remData);
-      wsRem['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 25 }];
-      XLSX.utils.book_append_sheet(wb, wsRem, 'التذكيرات');
     } else {
-      const wsRem = XLSX.utils.aoa_to_sheet([['لا توجد تذكيرات لهذا اليوم']]);
-      XLSX.utils.book_append_sheet(wb, wsRem, 'التذكيرات');
+      remindersSheet.addRow({ message: 'لا توجد تذكيرات لهذا اليوم' });
     }
 
     // ===================================
     // Sheet 5: الجدول الزمني (Timeline)
     // ===================================
-    const timelineData = [['الوقت', 'النوع', 'العنوان', 'التفاصيل']];
+    const timelineSheet = workbook.addWorksheet('الجدول الزمني');
     
-    // دمج جميع الأحداث مع أوقاتها
+    timelineSheet.columns = [
+      { header: 'الوقت', key: 'time', width: 10 },
+      { header: 'النوع', key: 'type', width: 12 },
+      { header: 'العنوان', key: 'title', width: 30 },
+      { header: 'التفاصيل', key: 'details', width: 35 }
+    ];
+
+    // تنسيق الرأس
+    timelineSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    timelineSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF9C27B0' }
+    };
+
+    // دمج جميع الأحداث
     const allEvents = [];
     
     expenses.forEach(exp => {
@@ -211,20 +278,16 @@ router.get('/export', auth, async (req, res) => {
     // ترتيب حسب الوقت
     allEvents.sort((a, b) => a.time.localeCompare(b.time));
     
-    allEvents.forEach(event => {
-      timelineData.push([event.time, event.type, event.title, event.details]);
-    });
-    
-    if (allEvents.length === 0) {
-      timelineData.push(['', '', 'لا توجد أحداث لهذا اليوم', '']);
+    if (allEvents.length > 0) {
+      allEvents.forEach(event => {
+        timelineSheet.addRow(event);
+      });
+    } else {
+      timelineSheet.addRow({ time: '', type: '', title: 'لا توجد أحداث لهذا اليوم', details: '' });
     }
-    
-    const wsTimeline = XLSX.utils.aoa_to_sheet(timelineData);
-    wsTimeline['!cols'] = [{ wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 35 }];
-    XLSX.utils.book_append_sheet(wb, wsTimeline, 'الجدول الزمني');
 
     // إنشاء الملف وإرساله
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await workbook.xlsx.writeBuffer();
     const filename = `daily_schedule_${new Date().toISOString().split('T')[0]}.xlsx`;
 
     console.log('✅ تم إنشاء الملف:', filename);

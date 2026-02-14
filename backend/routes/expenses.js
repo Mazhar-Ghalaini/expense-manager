@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Expense = require('../models/Expense');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
 // ==========================================
 // Auth Middleware
@@ -46,28 +46,36 @@ router.get('/export-excel', auth, async (req, res) => {
       });
     }
 
-    const wb = XLSX.utils.book_new();
-    const wsData = [
-      ['التاريخ', 'المبلغ', 'العملة', 'الفئة', 'الوصف']
+    // إنشاء Workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('المصروفات');
+
+    // تعريف الأعمدة
+    worksheet.columns = [
+      { header: 'التاريخ', key: 'date', width: 15 },
+      { header: 'المبلغ', key: 'amount', width: 12 },
+      { header: 'العملة', key: 'currency', width: 15 },
+      { header: 'الفئة', key: 'category', width: 15 },
+      { header: 'الوصف', key: 'description', width: 30 }
     ];
 
-    expenses.forEach(exp => {
-      const currency = exp.currency || { symbol: '€', name: 'يورو' };
-      wsData.push([
-        new Date(exp.date).toLocaleDateString('en-GB'),
-        exp.amount,
-        `${currency.symbol} ${currency.name}`,
-        exp.category,
-        exp.description || '-'
-      ]);
-    });
+    // تنسيق الرأس
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4CAF50' }
+    };
+    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-    // ✅ حساب الإجمالي حسب كل عملة
+    // إضافة البيانات
     const totalsByCurrency = {};
+    
     expenses.forEach(exp => {
       const currency = exp.currency || { symbol: '€', name: 'يورو', code: 'EUR' };
       const key = currency.code || 'EUR';
       
+      // حساب الإجمالي لكل عملة
       if (!totalsByCurrency[key]) {
         totalsByCurrency[key] = {
           total: 0,
@@ -76,28 +84,46 @@ router.get('/export-excel', auth, async (req, res) => {
         };
       }
       totalsByCurrency[key].total += exp.amount;
+
+      worksheet.addRow({
+        date: new Date(exp.date).toLocaleDateString('ar-EG'),
+        amount: exp.amount,
+        currency: `${currency.symbol} ${currency.name}`,
+        category: exp.category,
+        description: exp.description || '-'
+      });
     });
 
-    wsData.push([]);
-    wsData.push(['الإجمالي حسب العملة:']);
-    
+    // إضافة صف فارغ
+    worksheet.addRow({});
+
+    // إضافة الإجمالي حسب العملة
+    const totalRow = worksheet.addRow({
+      date: 'الإجمالي حسب العملة:',
+      amount: '',
+      currency: '',
+      category: '',
+      description: ''
+    });
+    totalRow.font = { bold: true };
+    totalRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF0F0F0' }
+    };
+
     Object.values(totalsByCurrency).forEach(curr => {
-      wsData.push(['', curr.total, `${curr.symbol} ${curr.name}`]);
+      worksheet.addRow({
+        date: '',
+        amount: curr.total,
+        currency: `${curr.symbol} ${curr.name}`,
+        category: '',
+        description: ''
+      });
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
-    ws['!cols'] = [
-      { wch: 15 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 30 }
-    ];
-    
-    XLSX.utils.book_append_sheet(wb, ws, 'المصروفات');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    // توليد Buffer
+    const buffer = await workbook.xlsx.writeBuffer();
     const filename = `expenses_${new Date().toISOString().split('T')[0]}.xlsx`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -126,36 +152,55 @@ router.get('/export', auth, async (req, res) => {
       });
     }
 
-    const wb = XLSX.utils.book_new();
-    const wsData = [
-      ['التاريخ', 'المبلغ', 'الفئة', 'الوصف']
+    // إنشاء Workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('المصروفات');
+
+    // تعريف الأعمدة
+    worksheet.columns = [
+      { header: 'التاريخ', key: 'date', width: 15 },
+      { header: 'المبلغ', key: 'amount', width: 12 },
+      { header: 'الفئة', key: 'category', width: 15 },
+      { header: 'الوصف', key: 'description', width: 30 }
     ];
 
+    // تنسيق الرأس
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF2196F3' }
+    };
+
+    // إضافة البيانات
+    let total = 0;
     expenses.forEach(exp => {
-      wsData.push([
-        new Date(exp.date).toLocaleDateString('en-GB'),
-        `${exp.amount} يورو`,
-        exp.category,
-        exp.description || '-'
-      ]);
+      total += exp.amount;
+      worksheet.addRow({
+        date: new Date(exp.date).toLocaleDateString('ar-EG'),
+        amount: `${exp.amount} يورو`,
+        category: exp.category,
+        description: exp.description || '-'
+      });
     });
 
-    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    wsData.push([]);
-    wsData.push(['المجموع الكلي:', `${total} يورو`]);
+    // إضافة صف الإجمالي
+    worksheet.addRow({});
+    const totalRow = worksheet.addRow({
+      date: 'المجموع الكلي:',
+      amount: `${total} يورو`,
+      category: '',
+      description: ''
+    });
+    totalRow.font = { bold: true };
+    totalRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFEB3B' }
+    };
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
-    ws['!cols'] = [
-      { wch: 15 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 30 }
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, 'المصروفات');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    // توليد Buffer
+    const buffer = await workbook.xlsx.writeBuffer();
     const filename = `expenses_${new Date().toISOString().split('T')[0]}.xlsx`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

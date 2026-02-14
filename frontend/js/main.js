@@ -76,9 +76,15 @@ async function handleLogin(event) {
     submitBtn.disabled = true;
     
     try {
-        // ✅ التحقق من وجود reCAPTCHA
+        // ✅ انتظار تحميل reCAPTCHA
+        let attempts = 0;
+        while (typeof grecaptcha === 'undefined' && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
         if (typeof grecaptcha === 'undefined') {
-            showAlert('⚠️ جاري تحميل نظام الحماية...', 'warning');
+            showAlert('⚠️ فشل تحميل نظام الحماية. الرجاء إعادة تحميل الصفحة', 'danger');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             return;
@@ -87,10 +93,14 @@ async function handleLogin(event) {
         // الحصول على reCAPTCHA token
         let recaptchaResponse;
         try {
+            // ✅ التحقق من وجود الويدجت أولاً
+            if (typeof grecaptcha.getResponse !== 'function') {
+                throw new Error('reCAPTCHA not ready');
+            }
             recaptchaResponse = grecaptcha.getResponse();
         } catch (error) {
             console.error('❌ خطأ في reCAPTCHA:', error);
-            showAlert('⚠️ الرجاء إعادة تحميل الصفحة', 'danger');
+            showAlert('⚠️ الرجاء الانتظار قليلاً ثم المحاولة مرة أخرى', 'warning');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             return;
@@ -131,8 +141,12 @@ async function handleLogin(event) {
             
             // إعادة تعيين reCAPTCHA
             try {
-                grecaptcha.reset();
-            } catch (e) {}
+                if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.reset === 'function') {
+                    grecaptcha.reset();
+                }
+            } catch (e) {
+                console.log('⚠️ تعذر إعادة تعيين reCAPTCHA');
+            }
             
             setTimeout(() => {
                 if (data.user.role === 'admin') {
@@ -147,8 +161,12 @@ async function handleLogin(event) {
             
             // إعادة تعيين reCAPTCHA
             try {
-                grecaptcha.reset();
-            } catch (e) {}
+                if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.reset === 'function') {
+                    grecaptcha.reset();
+                }
+            } catch (e) {
+                console.log('⚠️ تعذر إعادة تعيين reCAPTCHA');
+            }
             
             // إظهار زر إعادة الإرسال إذا كان الحساب غير مفعّل
             if (data.needsVerification) {
@@ -170,14 +188,17 @@ async function handleLogin(event) {
         
         // إعادة تعيين reCAPTCHA
         try {
-            grecaptcha.reset();
-        } catch (e) {}
+            if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.reset === 'function') {
+                grecaptcha.reset();
+            }
+        } catch (e) {
+            console.log('⚠️ تعذر إعادة تعيين reCAPTCHA');
+        }
         
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     }
 }
-
 // ==========================================
 // Handle Register
 // ==========================================

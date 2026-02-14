@@ -7,7 +7,7 @@ const { protect } = require('../middleware/auth');
 const { getCurrency } = require('../config/currencies');
 
 // ==========================================
-// ✅ دالة التحقق من reCAPTCHA (محدّثة)
+// ✅ دالة التحقق من reCAPTCHA
 // ==========================================
 async function verifyRecaptcha(token) {
   console.log('🔍 بدء التحقق من reCAPTCHA...');
@@ -40,7 +40,7 @@ async function verifyRecaptcha(token) {
           secret: secretKey,
           response: token
         },
-        timeout: 10000 // 10 ثواني
+        timeout: 10000
       }
     );
     
@@ -53,7 +53,6 @@ async function verifyRecaptcha(token) {
       console.log('❌ reCAPTCHA فشل!');
       console.log('📋 Error Codes:', response.data['error-codes']);
       
-      // تفسير الأخطاء
       const errorCodes = response.data['error-codes'] || [];
       let message = 'فشل التحقق من reCAPTCHA';
       
@@ -96,25 +95,22 @@ async function verifyRecaptcha(token) {
 // ==========================================
 // إعدادات الحماية
 // ==========================================
-const MAX_LOGIN_ATTEMPTS_EMAIL = 5;      // 5 محاولات للإيميل
-const MAX_LOGIN_ATTEMPTS_IP = 10;        // 10 محاولات للـ IP
-const BLOCK_DURATION_MS = 15 * 60 * 1000; // 15 دقيقة
-const CAPTCHA_THRESHOLD = 3;              // بعد 3 محاولات → CAPTCHA
+const MAX_LOGIN_ATTEMPTS_EMAIL = 5;
+const MAX_LOGIN_ATTEMPTS_IP = 10;
+const BLOCK_DURATION_MS = 15 * 60 * 1000;
+const CAPTCHA_THRESHOLD = 3;
 
-// تخزين مؤقت للمحاولات (في الإنتاج: استخدم Redis)
 const loginAttemptsByEmail = {};
 const loginAttemptsByIP = {};
 const blockedEmails = new Set();
 const blockedIPs = new Set();
 
 // ==========================================
-// ✅ Rate Limiters (النسخة النهائية - بدون أخطاء)
+// Rate Limiters
 // ==========================================
-
-// Rate Limiter عام لجميع routes
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 100, // 100 طلب كحد أقصى
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: {
     success: false,
     message: 'عدد الطلبات كبير جداً، حاول بعد قليل'
@@ -123,39 +119,35 @@ const generalLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Rate Limiter خاص بـ Login
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 20, // 20 محاولة login من نفس الـ IP
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   message: {
     success: false,
     message: 'عدد محاولات تسجيل الدخول كبير جداً، حاول بعد 15 دقيقة'
   },
-  skipSuccessfulRequests: true, // لا تحسب المحاولات الناجحة
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate Limiter خاص بـ Forgot Password
 const forgotPasswordLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // ساعة واحدة
-  max: 3, // 3 محاولات فقط
+  windowMs: 60 * 60 * 1000,
+  max: 3,
   message: {
     success: false,
     message: 'لقد تجاوزت الحد المسموح، حاول بعد ساعة'
   },
   standardHeaders: true,
   legacyHeaders: false
-  // ✅ لا يوجد keyGenerator - يستخدم الافتراضي
 });
 
 // ==========================================
-// دالة تنظيف البيانات القديمة (كل 30 دقيقة)
+// تنظيف البيانات القديمة
 // ==========================================
 setInterval(() => {
   const now = Date.now();
   
-  // تنظيف Email attempts
   Object.keys(loginAttemptsByEmail).forEach(email => {
     if (now - loginAttemptsByEmail[email].firstAttempt > BLOCK_DURATION_MS) {
       delete loginAttemptsByEmail[email];
@@ -163,7 +155,6 @@ setInterval(() => {
     }
   });
   
-  // تنظيف IP attempts
   Object.keys(loginAttemptsByIP).forEach(ip => {
     if (now - loginAttemptsByIP[ip].firstAttempt > BLOCK_DURATION_MS) {
       delete loginAttemptsByIP[ip];
@@ -175,7 +166,7 @@ setInterval(() => {
 }, 30 * 60 * 1000);
 
 // ==========================================
-// دالة للتحقق من وجود المستخدم
+// دالة التحقق من وجود المستخدم
 // ==========================================
 const userExists = async (email) => {
   if (!email) return false;
@@ -203,7 +194,6 @@ const loginProtection = async (req, res, next) => {
       });
     }
 
-    // ===== 1. فحص IP المحظور =====
     if (blockedIPs.has(ip)) {
       const ipData = loginAttemptsByIP[ip];
       if (ipData && now - ipData.firstAttempt < BLOCK_DURATION_MS) {
@@ -216,13 +206,11 @@ const loginProtection = async (req, res, next) => {
           remainingTime
         });
       } else {
-        // انتهت مدة الحظر
         blockedIPs.delete(ip);
         delete loginAttemptsByIP[ip];
       }
     }
 
-    // ===== 2. فحص Email المحظور =====
     if (blockedEmails.has(email)) {
       const emailData = loginAttemptsByEmail[email];
       if (emailData && now - emailData.firstAttempt < BLOCK_DURATION_MS) {
@@ -235,13 +223,11 @@ const loginProtection = async (req, res, next) => {
           remainingTime
         });
       } else {
-        // انتهت مدة الحظر
         blockedEmails.delete(email);
         delete loginAttemptsByEmail[email];
       }
     }
 
-    // ===== 3. تهيئة العدادات =====
     if (!loginAttemptsByEmail[email]) {
       loginAttemptsByEmail[email] = { 
         count: 0, 
@@ -258,7 +244,6 @@ const loginProtection = async (req, res, next) => {
       };
     }
 
-    // ===== 4. إعادة تعيين العدادات بعد انتهاء المدة =====
     const emailAttempt = loginAttemptsByEmail[email];
     const ipAttempt = loginAttemptsByIP[ip];
 
@@ -272,7 +257,6 @@ const loginProtection = async (req, res, next) => {
       ipAttempt.firstAttempt = now;
     }
 
-    // ===== 5. التحقق من العدادات =====
     if (emailAttempt.count >= MAX_LOGIN_ATTEMPTS_EMAIL) {
       blockedEmails.add(email);
       console.log(`🚫 Email محظور: ${email} (${emailAttempt.count} محاولات)`);
@@ -295,7 +279,6 @@ const loginProtection = async (req, res, next) => {
       });
     }
 
-    // ===== 6. تخزين بيانات المحاولة في req =====
     req.loginAttemptData = {
       email,
       ip,
@@ -308,7 +291,7 @@ const loginProtection = async (req, res, next) => {
     
   } catch (error) {
     console.error('❌ خطأ في loginProtection:', error);
-    next(); // السماح بالمرور في حالة الخطأ
+    next();
   }
 };
 
@@ -323,14 +306,16 @@ const generateToken = (userId) => {
   );
 };
 
-// Register - مع إرسال بريد التحقق
+// ==========================================
+// Register - مع reCAPTCHA
+// ==========================================
 router.post('/register', generalLimiter, async (req, res) => {
   try {
-    const { name, email, password, phone, currencyCode } = req.body;
+    const { name, email, password, phone, currencyCode, recaptchaToken } = req.body;
     
-    console.log('📝 طلب تسجيل جديد:', { name, email, phone, currencyCode });
+    console.log('📝 طلب تسجيل جديد:', { name, email, phone: phone || 'غير مدخل', currencyCode });
 
-    // ✅ التحقق من reCAPTCHA
+    // ✅ التحقق من reCAPTCHA أولاً
     const recaptchaResult = await verifyRecaptcha(recaptchaToken);
     
     if (!recaptchaResult.success) {
@@ -349,16 +334,7 @@ router.post('/register', generalLimiter, async (req, res) => {
         message: 'الرجاء ملء جميع الحقول المطلوبة' 
       });
     }
-
     
-    if (!name || !email || !password) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'الرجاء ملء جميع الحقول المطلوبة' 
-      });
-    }
-    
-    // التحقق من البريد المستخدم
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ 
@@ -369,14 +345,13 @@ router.post('/register', generalLimiter, async (req, res) => {
     
     const currencyInfo = getCurrency(currencyCode || 'SAR');
     
-    // إنشاء المستخدم (غير مفعّل)
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
-      phone: phone.trim(),
+      phone: phone?.trim() || '0000000000', // ✅ اختياري
       role: 'user',
-      emailVerified: false, // ✅ غير مفعّل
+      emailVerified: false,
       currency: {
         code: currencyInfo.code,
         symbol: currencyInfo.symbol,
@@ -393,26 +368,24 @@ router.post('/register', generalLimiter, async (req, res) => {
     
     console.log('✅ تم إنشاء المستخدم:', user.email);
     
-    // ✅ إنشاء Token للتحقق
     const crypto = require('crypto');
     const verificationToken = crypto.randomBytes(32).toString('hex');
     
     user.emailVerificationToken = verificationToken;
-    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 ساعة
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await user.save();
     
-    // ✅ إرسال بريد التحقق
-const frontendURL = process.env.FRONTEND_URL;
+    const frontendURL = process.env.FRONTEND_URL;
 
-if (!frontendURL) {
-  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
-  return res.status(500).json({
-    success: false,
-    message: 'خطأ في إعدادات الخادم'
-  });
-}
+    if (!frontendURL) {
+      console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+      return res.status(500).json({
+        success: false,
+        message: 'خطأ في إعدادات الخادم'
+      });
+    }
 
-console.log('🌐 Frontend URL:', frontendURL);    
+    console.log('🌐 Frontend URL:', frontendURL);    
     const verificationLink = `${frontendURL}/verify-email.html?token=${verificationToken}`;
     
     const { sendVerificationEmail } = require('../utils/emailService');
@@ -422,7 +395,6 @@ console.log('🌐 Frontend URL:', frontendURL);
       console.log('⚠️ فشل إرسال بريد التحقق، لكن المستخدم تم إنشاؤه');
     }
     
-    // ✅ لا نعطي Token مباشرة - يجب التحقق أولاً
     res.status(201).json({
       success: true,
       message: 'تم إنشاء الحساب! الرجاء التحقق من بريدك الإلكتروني لتفعيل الحساب',
@@ -440,7 +412,9 @@ console.log('🌐 Frontend URL:', frontendURL);
   }
 });
 
-// ✅ Route التحقق من البريد
+// ==========================================
+// Verify Email
+// ==========================================
 router.get('/verify-email', async (req, res) => {
   try {
     const { token } = req.query;
@@ -467,7 +441,6 @@ router.get('/verify-email', async (req, res) => {
       });
     }
     
-    // ✅ تفعيل الحساب
     user.emailVerified = true;
     user.emailVerificationToken = undefined;
     user.emailVerificationExpires = undefined;
@@ -475,7 +448,6 @@ router.get('/verify-email', async (req, res) => {
     
     console.log('✅ تم تفعيل الحساب:', user.email);
     
-    // ✅ الآن نعطي Token للدخول
     const jwtToken = generateToken(user._id);
     
     res.json({
@@ -500,7 +472,9 @@ router.get('/verify-email', async (req, res) => {
   }
 });
 
-// ✅ إعادة إرسال بريد التحقق
+// ==========================================
+// Resend Verification
+// ==========================================
 router.post('/resend-verification', generalLimiter, async (req, res) => {
   try {
     const { email } = req.body;
@@ -528,7 +502,6 @@ router.post('/resend-verification', generalLimiter, async (req, res) => {
       });
     }
     
-    // إنشاء Token جديد
     const crypto = require('crypto');
     const verificationToken = crypto.randomBytes(32).toString('hex');
     
@@ -536,18 +509,17 @@ router.post('/resend-verification', generalLimiter, async (req, res) => {
     user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await user.save();
     
-    // إرسال البريد
-const frontendURL = process.env.FRONTEND_URL;
+    const frontendURL = process.env.FRONTEND_URL;
 
-if (!frontendURL) {
-  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
-  return res.status(500).json({
-    success: false,
-    message: 'خطأ في إعدادات الخادم'
-  });
-}
+    if (!frontendURL) {
+      console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+      return res.status(500).json({
+        success: false,
+        message: 'خطأ في إعدادات الخادم'
+      });
+    }
 
-console.log('🌐 Frontend URL:', frontendURL);    
+    console.log('🌐 Frontend URL:', frontendURL);    
     const verificationLink = `${frontendURL}/verify-email.html?token=${verificationToken}`;
     
     const { sendVerificationEmail } = require('../utils/emailService');
@@ -576,16 +548,16 @@ console.log('🌐 Frontend URL:', frontendURL);
     });
   }
 });
+
 // ==========================================
-// Login - مع الحماية الكاملة
+// Login - مع reCAPTCHA
+// ==========================================
 router.post('/login', loginLimiter, loginProtection, async (req, res) => {
   try {
     console.log('🔐 محاولة تسجيل دخول:', req.body.email);
     
-    // ✅ أخذ جميع المتغيرات دفعة واحدة
     const { email, password, recaptchaToken } = req.body;
     
-    // التحقق من reCAPTCHA
     const recaptchaResult = await verifyRecaptcha(recaptchaToken);
     
     if (!recaptchaResult.success) {
@@ -599,7 +571,6 @@ router.post('/login', loginLimiter, loginProtection, async (req, res) => {
     console.log('✅ reCAPTCHA نجح');
     
     const attemptData = req.loginAttemptData;
-    
 
     if (!email || !password) {
       return res.status(400).json({ 
@@ -623,7 +594,6 @@ router.post('/login', loginLimiter, loginProtection, async (req, res) => {
     const isMatch = await user.comparePassword(password);
     
     if (!isMatch) {
-      // زيادة العدادات فقط عند كلمة مرور خاطئة
       attemptData.emailAttempt.count += 1;
       attemptData.emailAttempt.lastAttempt = Date.now();
       
@@ -647,9 +617,6 @@ router.post('/login', loginLimiter, loginProtection, async (req, res) => {
       });
     }
 
-    // ✅✅✅ كلمة المرور صحيحة - فحص التفعيل ✅✅✅
-    
-    // 1️⃣ إذا لم يكن الحقل موجود أصلاً (حسابات قديمة) → فعّل تلقائياً
     if (user.emailVerified === undefined || user.emailVerified === null) {
       console.log('🔄 حساب قديم - تفعيل تلقائي:', user.email);
       user.emailVerified = true;
@@ -657,12 +624,9 @@ router.post('/login', loginLimiter, loginProtection, async (req, res) => {
       user.emailVerificationExpires = undefined;
       await user.save();
     }
-    
-    // 2️⃣ إذا كان الحساب غير مفعّل (حساب جديد)
     else if (user.emailVerified === false) {
       console.log('⚠️ حساب غير مفعّل:', user.email);
       
-      // فحص: هل يحتاج Token جديد؟
       let needsNewToken = false;
       
       if (!user.emailVerificationToken || !user.emailVerificationExpires) {
@@ -675,27 +639,25 @@ router.post('/login', loginLimiter, loginProtection, async (req, res) => {
         console.log('✅ Token موجود وصالح');
       }
       
-      // إرسال Token جديد إذا لزم الأمر
       if (needsNewToken) {
         const crypto = require('crypto');
         const verificationToken = crypto.randomBytes(32).toString('hex');
         
         user.emailVerificationToken = verificationToken;
-        user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 ساعة
+        user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
         await user.save();
         
-        // إرسال البريد
-const frontendURL = process.env.FRONTEND_URL;
+        const frontendURL = process.env.FRONTEND_URL;
 
-if (!frontendURL) {
-  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
-  return res.status(500).json({
-    success: false,
-    message: 'خطأ في إعدادات الخادم'
-  });
-}
+        if (!frontendURL) {
+          console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+          return res.status(500).json({
+            success: false,
+            message: 'خطأ في إعدادات الخادم'
+          });
+        }
 
-console.log('🌐 Frontend URL:', frontendURL);        
+        console.log('🌐 Frontend URL:', frontendURL);        
         const verificationLink = `${frontendURL}/verify-email.html?token=${verificationToken}`;
         
         console.log('🔗 رابط التفعيل:', verificationLink);
@@ -710,7 +672,6 @@ console.log('🌐 Frontend URL:', frontendURL);
         }
       }
       
-      // منع تسجيل الدخول
       return res.status(403).json({
         success: false,
         message: 'الرجاء تفعيل بريدك الإلكتروني أولاً. ' + (needsNewToken ? 'تم إرسال رابط جديد' : 'تحقق من بريدك'),
@@ -720,10 +681,8 @@ console.log('🌐 Frontend URL:', frontendURL);
       });
     }
 
-    // 3️⃣ الحساب مفعّل ✅ - السماح بالدخول
     console.log('✅ الحساب مفعّل - السماح بالدخول');
 
-    // إعادة تعيين عدادات المحاولات
     if (loginAttemptsByEmail[email]) {
       delete loginAttemptsByEmail[email];
     }
@@ -758,7 +717,7 @@ console.log('🌐 Frontend URL:', frontendURL);
 });
 
 // ==========================================
-// Forgot Password - مع حماية
+// Forgot Password
 // ==========================================
 router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
   try {
@@ -796,17 +755,17 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
       expiresAt
     });
     
-const frontendURL = process.env.FRONTEND_URL;
+    const frontendURL = process.env.FRONTEND_URL;
 
-if (!frontendURL) {
-  console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
-  return res.status(500).json({
-    success: false,
-    message: 'خطأ في إعدادات الخادم'
-  });
-}
+    if (!frontendURL) {
+      console.error('❌ FRONTEND_URL غير موجود في Environment Variables');
+      return res.status(500).json({
+        success: false,
+        message: 'خطأ في إعدادات الخادم'
+      });
+    }
 
-console.log('🌐 Frontend URL:', frontendURL);    
+    console.log('🌐 Frontend URL:', frontendURL);    
     const resetLink = `${frontendURL}/reset-password.html?token=${token}`;
     
     console.log('🔗 رابط إعادة التعيين:', resetLink);
@@ -891,7 +850,6 @@ router.post('/reset-password', generalLimiter, async (req, res) => {
     resetRequest.used = true;
     await resetRequest.save();
     
-    // ✅ إعادة تعيين عدادات المحاولات للحساب
     if (loginAttemptsByEmail[user.email]) {
       delete loginAttemptsByEmail[user.email];
     }

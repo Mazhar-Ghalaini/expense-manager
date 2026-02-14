@@ -37,7 +37,6 @@ function closeModal(modalId) {
         modal.classList.remove('active');
         document.body.style.overflow = 'auto';
         
-        // Reset forgot password form when closing
         if (modalId === 'forgotPasswordModal') {
             const form = document.getElementById('forgotPasswordForm');
             const success = document.getElementById('forgotPasswordSuccess');
@@ -52,6 +51,7 @@ function closeModal(modalId) {
         }
     }
 }
+
 // ==========================================
 // Authentication Functions
 // ==========================================
@@ -62,26 +62,7 @@ async function handleLogin(event) {
     
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
-// ✅ التحقق من تحميل reCAPTCHA
-if (typeof grecaptcha === 'undefined') {
-    showAlert('⚠️ جاري تحميل نظام الحماية، الرجاء الانتظار...', 'warning');
     
-    // إعادة المحاولة بعد ثانية
-    setTimeout(() => {
-        event.target.dispatchEvent(new Event('submit'));
-    }, 1000);
-    
-    return;
-}
-
-// الحصول على reCAPTCHA token
-const recaptchaResponse = grecaptcha.getResponse();
-
-if (!recaptchaResponse) {
-    showAlert('⚠️ الرجاء التحقق من أنك لست روبوت', 'warning');
-    return;
-}
-
     console.log('🔐 محاولة تسجيل الدخول:', email);
     
     if (!email || !password) {
@@ -95,12 +76,45 @@ if (!recaptchaResponse) {
     submitBtn.disabled = true;
     
     try {
+        // ✅ التحقق من وجود reCAPTCHA
+        if (typeof grecaptcha === 'undefined') {
+            showAlert('⚠️ جاري تحميل نظام الحماية...', 'warning');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        // الحصول على reCAPTCHA token
+        let recaptchaResponse;
+        try {
+            recaptchaResponse = grecaptcha.getResponse();
+        } catch (error) {
+            console.error('❌ خطأ في reCAPTCHA:', error);
+            showAlert('⚠️ الرجاء إعادة تحميل الصفحة', 'danger');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        if (!recaptchaResponse || recaptchaResponse === '') {
+            showAlert('⚠️ الرجاء التحقق من أنك لست روبوت', 'warning');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        console.log('✅ reCAPTCHA Token:', recaptchaResponse.substring(0, 20) + '...');
+        
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password, recaptchaToken: recaptchaResponse})
+            body: JSON.stringify({ 
+                email, 
+                password,
+                recaptchaToken: recaptchaResponse 
+            })
         });
         
         const data = await response.json();
@@ -111,10 +125,14 @@ if (!recaptchaResponse) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             
-            console.log('✅ تم حفظ التوكن:', data.token.substring(0, 20) + '...');
-            console.log('✅ تم حفظ بيانات المستخدم:', data.user);
+            console.log('✅ تم حفظ التوكن');
             
             showAlert('✅ تم تسجيل الدخول بنجاح!', 'success');
+            
+            // إعادة تعيين reCAPTCHA
+            try {
+                grecaptcha.reset();
+            } catch (e) {}
             
             setTimeout(() => {
                 if (data.user.role === 'admin') {
@@ -126,18 +144,19 @@ if (!recaptchaResponse) {
             
         } else {
             showAlert(data.message || 'خطأ في تسجيل الدخول', 'danger');
-                // إعادة تعيين reCAPTCHA
-            grecaptcha.reset();
-
-            // ✅✅✅ إضافة: إظهار زر إعادة الإرسال إذا كان الحساب غير مفعّل
+            
+            // إعادة تعيين reCAPTCHA
+            try {
+                grecaptcha.reset();
+            } catch (e) {}
+            
+            // إظهار زر إعادة الإرسال إذا كان الحساب غير مفعّل
             if (data.needsVerification) {
                 console.log('⚠️ الحساب غير مفعّل');
                 
                 const verificationAlert = document.getElementById('verificationAlert');
                 if (verificationAlert) {
                     verificationAlert.style.display = 'block';
-                    
-                    // حفظ البريد للاستخدام في إعادة الإرسال
                     sessionStorage.setItem('pendingEmail', data.email || email);
                 }
             }
@@ -148,92 +167,69 @@ if (!recaptchaResponse) {
     } catch (error) {
         console.error('❌ خطأ في تسجيل الدخول:', error);
         showAlert('حدث خطأ في الاتصال بالخادم', 'danger');
+        
+        // إعادة تعيين reCAPTCHA
+        try {
+            grecaptcha.reset();
+        } catch (e) {}
+        
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     }
 }
 
+// ==========================================
 // Handle Register
+// ==========================================
 async function handleRegister(event) {
     event.preventDefault();
     
-    const name = document.getElementById('registerName').value.trim();
-    const email = document.getElementById('registerEmail').value.trim();
-    const phone = document.getElementById('registerPhone').value.trim();
-    const password = document.getElementById('registerPassword').value;
-    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
-    const currencyCode = document.getElementById('registerCurrency').value;
-
-    // ✅ الحصول على reCAPTCHA token
-    const recaptchaResponse = grecaptcha.getResponse();
+    const name = document.getElementById('registerName')?.value.trim();
+    const email = document.getElementById('registerEmail')?.value.trim();
+    const password = document.getElementById('registerPassword')?.value;
+    const phone = document.getElementById('registerPhone')?.value.trim();
+    const currencyCode = document.getElementById('registerCurrency')?.value || 'SAR';
     
-    if (!recaptchaResponse) {
+    console.log('📝 محاولة التسجيل:', { name, email, phone, currencyCode });
+    
+    if (!name || !email || !password || !phone) {
+        showAlert('الرجاء ملء جميع الحقول المطلوبة', 'danger');
+        return;
+    }
+    
+    // ✅ التحقق من reCAPTCHA
+    if (typeof grecaptcha === 'undefined') {
+        showAlert('⚠️ جاري تحميل نظام الحماية...', 'warning');
+        return;
+    }
+    
+    let recaptchaResponse;
+    try {
+        recaptchaResponse = grecaptcha.getResponse();
+    } catch (error) {
+        console.error('❌ خطأ في reCAPTCHA:', error);
+        showAlert('⚠️ الرجاء إعادة تحميل الصفحة', 'danger');
+        return;
+    }
+    
+    if (!recaptchaResponse || recaptchaResponse === '') {
         showAlert('⚠️ الرجاء التحقق من أنك لست روبوت', 'warning');
         return;
     }
     
-    // ... إرسال الطلب
-    body: JSON.stringify({ 
-        name, 
-        email, 
-        password,
-        phone,
-        currencyCode,
-        recaptchaToken: recaptchaResponse 
-    })
-
-    
-    console.log('📝 محاولة التسجيل:', { name, email, phone, currencyCode });
-    
-    if (name.length < 3) {
-        showAlert('الاسم يجب أن يكون 3 أحرف على الأقل', 'danger');
-        return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        showAlert('الرجاء إدخال بريد إلكتروني صحيح', 'danger');
-        return;
-    }
-    
-    const phoneRegex = /^05\d{8}$/;
-    if (!phoneRegex.test(phone)) {
-        showAlert('رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام', 'danger');
-        return;
-    }
-    
-    if (password.length < 6) {
-        showAlert('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'danger');
-        return;
-    }
-    
-    if (password !== passwordConfirm) {
-        showAlert('كلمتا المرور غير متطابقتين', 'danger');
-        return;
-    }
-    
-    if (!document.getElementById('registerTerms').checked) {
-        showAlert('يجب الموافقة على الشروط والأحكام', 'danger');
-        return;
-    }
-    
-    const submitBtn = document.getElementById('registerBtn');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إنشاء الحساب...';
-    submitBtn.disabled = true;
-    
     try {
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
-                name, 
-                email, 
-                phone, 
+            body: JSON.stringify({
+                name,
+                email,
                 password,
-                currencyCode
+                phone,
+                currencyCode,
+                recaptchaToken: recaptchaResponse
             })
         });
         
@@ -241,32 +237,39 @@ async function handleRegister(event) {
         
         console.log('📥 استجابة التسجيل:', data);
         
-        if (data.success && data.token) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.success) {
+            showAlert('✅ ' + data.message, 'success');
             
-            console.log('✅ تم حفظ التوكن:', data.token.substring(0, 20) + '...');
-            console.log('✅ تم حفظ بيانات المستخدم:', data.user);
+            // إعادة تعيين reCAPTCHA
+            try {
+                grecaptcha.reset();
+            } catch (e) {}
             
-            showAlert(`✅ تم إنشاء حسابك بنجاح! جاري تحويلك...`, 'success');
+            // إعادة تعيين الـ form
+            event.target.reset();
             
-            closeModal('registerModal');
-            
+            // الانتقال لتسجيل الدخول بعد 3 ثواني
             setTimeout(() => {
-                window.location.href = 'app.html';
-            }, 1500);
+                window.location.href = 'login.html';
+            }, 3000);
             
         } else {
             showAlert(data.message || 'خطأ في التسجيل', 'danger');
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
+            
+            // إعادة تعيين reCAPTCHA
+            try {
+                grecaptcha.reset();
+            } catch (e) {}
         }
         
     } catch (error) {
         console.error('❌ خطأ في التسجيل:', error);
-        showAlert('خطأ في الاتصال بالخادم', 'danger');
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
+        showAlert('حدث خطأ في الاتصال بالخادم', 'danger');
+        
+        // إعادة تعيين reCAPTCHA
+        try {
+            grecaptcha.reset();
+        } catch (e) {}
     }
 }
 
@@ -301,7 +304,8 @@ function showAlert(message, type = 'success') {
     const colors = {
         success: { bg: '#d4edda', text: '#155724', border: '#c3e6cb' },
         danger: { bg: '#f8d7da', text: '#721c24', border: '#f5c6cb' },
-        info: { bg: '#d1ecf1', text: '#0c5460', border: '#bee5eb' }
+        info: { bg: '#d1ecf1', text: '#0c5460', border: '#bee5eb' },
+        warning: { bg: '#fff3cd', text: '#856404', border: '#ffeeba' }
     };
     
     const color = colors[type] || colors.info;
@@ -309,7 +313,7 @@ function showAlert(message, type = 'success') {
     alert.style.color = color.text;
     alert.style.border = `2px solid ${color.border}`;
     
-    const icon = type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle';
+    const icon = type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle';
     
     alert.innerHTML = `
         <i class="fas fa-${icon}" style="font-size: 1.2rem;"></i>
@@ -520,7 +524,103 @@ function applyColors(colors) {
     console.log('🎨 تم تطبيق الألوان المخصصة');
 }
 
+// ==========================================
+// Toggle Password Visibility
+// ==========================================
+function togglePasswordModal(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        button.style.color = '#667eea';
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        button.style.color = '#95a5a6';
+    }
+}
 
+// ==========================================
+// Forgot Password Modal Functions
+// ==========================================
+function showForgotPasswordModal() {
+    console.log('🔑 فتح نموذج استعادة كلمة المرور');
+    const modal = document.getElementById('forgotPasswordModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        document.getElementById('forgotPasswordSuccess').style.display = 'none';
+        document.getElementById('forgotPasswordForm').style.display = 'block';
+        const emailInput = document.getElementById('forgotEmail');
+        if (emailInput) emailInput.value = '';
+    } else {
+        console.error('❌ لم يتم العثور على forgotPasswordModal');
+    }
+}
+
+// ==========================================
+// Handle Forgot Password Submit
+// ==========================================
+async function handleForgotPassword(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('forgotEmail').value.trim();
+    const btn = document.getElementById('forgotPasswordBtn');
+    const originalText = btn.innerHTML;
+    
+    if (!email) {
+        showAlert('الرجاء إدخال البريد الإلكتروني', 'danger');
+        return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showAlert('الرجاء إدخال بريد إلكتروني صحيح', 'danger');
+        return;
+    }
+    
+    console.log('📧 إرسال طلب استعادة كلمة المرور:', email);
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        console.log('📥 استجابة forgot-password:', data);
+        
+        if (data.success) {
+            document.getElementById('forgotPasswordForm').style.display = 'none';
+            document.getElementById('forgotPasswordSuccess').style.display = 'block';
+            document.getElementById('sentToEmail').textContent = email;
+            
+            console.log('✅ تم إرسال رابط إعادة التعيين بنجاح');
+            showAlert('✅ تم إرسال رابط الاستعادة إلى بريدك', 'success');
+            
+        } else {
+            showAlert(data.message || 'حدث خطأ أثناء الإرسال', 'danger');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+        
+    } catch (error) {
+        console.error('❌ خطأ في forgot-password:', error);
+        showAlert('حدث خطأ في الاتصال بالخادم', 'danger');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
 
 // ==========================================
 // Event Listeners
@@ -530,8 +630,55 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadSiteSettings();
     
-    // ✅ تم إزالة الكود المتعارض مع toggleMobileMenu()
-    // القائمة الآن تُدار بالكامل من index.html
+    // إعادة إرسال رابط التفعيل
+    const resendBtn = document.getElementById('resendBtn');
+    if (resendBtn) {
+        resendBtn.addEventListener('click', async function() {
+            const email = sessionStorage.getItem('pendingEmail');
+            
+            if (!email) {
+                showAlert('الرجاء إدخال بريدك الإلكتروني أولاً', 'danger');
+                return;
+            }
+            
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/resend-verification`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ تم إرسال رابط التفعيل! تحقق من بريدك', 'success');
+                    btn.innerHTML = '✅ تم الإرسال';
+                    
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }, 30000);
+                } else {
+                    showAlert(data.message || 'فشل الإرسال', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+                
+            } catch (error) {
+                console.error('خطأ في إعادة الإرسال:', error);
+                showAlert('خطأ في الاتصال', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    }
     
     window.addEventListener('click', function(event) {
         if (event.target.classList.contains('modal')) {
@@ -560,13 +707,10 @@ document.addEventListener('DOMContentLoaded', function() {
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
-        // ✅ إذا الرابط # فقط أو #! → لا تعمل شيء
         if (href === '#' || href === '#!') return;
         
-        // ✅ تحقق إذا العنصر موجود في الصفحة الحالية
         const target = document.querySelector(href);
         
-        // ✅ فقط إذا العنصر موجود → امنع السلوك الافتراضي واعمل smooth scroll
         if (target) {
             e.preventDefault();
             target.scrollIntoView({
@@ -574,7 +718,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 block: 'start'
             });
         }
-        // إذا العنصر مو موجود → الرابط يفتح عادي (مثل index.html#features)
     });
 });
 
@@ -608,162 +751,3 @@ console.log('%c مدير المصروفات الذكي ',
     'background: #4a90e2; color: white; font-size: 20px; padding: 10px; border-radius: 5px;');
 console.log('%c تطبيق إدارة المصروفات والمواعيد بالذكاء الاصطناعي ', 
     'color: #666; font-size: 14px;');
-
-// ==========================================
-// Toggle Password Visibility - للـ Modals
-// ==========================================
-function togglePasswordModal(inputId, button) {
-    const input = document.getElementById(inputId);
-    const icon = button.querySelector('i');
-    
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-        button.style.color = '#667eea';
-    } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-        button.style.color = '#95a5a6';
-    }
-}
-
-// ==========================================
-// Forgot Password Modal Functions
-// ==========================================
-function showForgotPasswordModal() {
-    console.log('🔑 فتح نموذج استعادة كلمة المرور');
-    const modal = document.getElementById('forgotPasswordModal');
-    if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-        // Reset form
-        document.getElementById('forgotPasswordSuccess').style.display = 'none';
-        document.getElementById('forgotPasswordForm').style.display = 'block';
-        const emailInput = document.getElementById('forgotEmail');
-        if (emailInput) emailInput.value = '';
-    } else {
-        console.error('❌ لم يتم العثور على forgotPasswordModal');
-    }
-}
-
-// ==========================================
-// Handle Forgot Password Submit
-// ==========================================
-async function handleForgotPassword(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('forgotEmail').value.trim();
-    const btn = document.getElementById('forgotPasswordBtn');
-    const originalText = btn.innerHTML;
-    
-    if (!email) {
-        showAlert('الرجاء إدخال البريد الإلكتروني', 'danger');
-        return;
-    }
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        showAlert('الرجاء إدخال بريد إلكتروني صحيح', 'danger');
-        return;
-    }
-    
-    console.log('📧 إرسال طلب استعادة كلمة المرور:', email);
-    
-    // Disable button
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
-    btn.disabled = true;
-    
-    try {
-        const response = await fetch(`${API_URL}/auth/forgot-password`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-        
-        const data = await response.json();
-        
-        console.log('📥 استجابة forgot-password:', data);
-        
-        if (data.success) {
-            // Hide form, show success message
-            document.getElementById('forgotPasswordForm').style.display = 'none';
-            document.getElementById('forgotPasswordSuccess').style.display = 'block';
-            document.getElementById('sentToEmail').textContent = email;
-            
-            console.log('✅ تم إرسال رابط إعادة التعيين بنجاح');
-            
-            // Show success alert
-            showAlert('✅ تم إرسال رابط الاستعادة إلى بريدك', 'success');
-            
-        } else {
-            showAlert(data.message || 'حدث خطأ أثناء الإرسال', 'danger');
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-        
-    } catch (error) {
-        console.error('❌ خطأ في forgot-password:', error);
-        showAlert('حدث خطأ في الاتصال بالخادم', 'danger');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-}
-
-// ==========================================
-// إعادة إرسال رابط التفعيل
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-    const resendBtn = document.getElementById('resendBtn');
-    
-    if (resendBtn) {
-        resendBtn.addEventListener('click', async function() {
-            const email = sessionStorage.getItem('pendingEmail');
-            
-            if (!email) {
-                showAlert('الرجاء إدخال بريدك الإلكتروني أولاً', 'danger');
-                return;
-            }
-            
-            const btn = this;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
-            
-            try {
-                const response = await fetch(`${API_URL}/auth/resend-verification`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showAlert('✅ تم إرسال رابط التفعيل! تحقق من بريدك', 'success');
-                    btn.innerHTML = '✅ تم الإرسال';
-                    
-                    setTimeout(() => {
-                        btn.disabled = false;
-                        btn.innerHTML = originalText;
-                    }, 30000); // 30 ثانية
-                } else {
-                    showAlert(data.message || 'فشل الإرسال', 'danger');
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-                
-            } catch (error) {
-                console.error('خطأ في إعادة الإرسال:', error);
-                showAlert('خطأ في الاتصال', 'danger');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        });
-    }
-});

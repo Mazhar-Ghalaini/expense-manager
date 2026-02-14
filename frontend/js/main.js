@@ -208,37 +208,75 @@ async function handleRegister(event) {
     const name = document.getElementById('registerName')?.value.trim();
     const email = document.getElementById('registerEmail')?.value.trim();
     const password = document.getElementById('registerPassword')?.value;
-    const phone = document.getElementById('registerPhone')?.value.trim();
+    const passwordConfirm = document.getElementById('registerPasswordConfirm')?.value;
+    const phone = document.getElementById('registerPhone')?.value.trim() || '0000000000'; // ✅ اختياري
     const currencyCode = document.getElementById('registerCurrency')?.value || 'SAR';
     
     console.log('📝 محاولة التسجيل:', { name, email, phone, currencyCode });
     
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password) {
         showAlert('الرجاء ملء جميع الحقول المطلوبة', 'danger');
         return;
     }
     
-    // ✅ التحقق من reCAPTCHA
-    if (typeof grecaptcha === 'undefined') {
-        showAlert('⚠️ جاري تحميل نظام الحماية...', 'warning');
+    // التحقق من تطابق كلمة المرور
+    if (password !== passwordConfirm) {
+        showAlert('كلمات المرور غير متطابقة', 'danger');
         return;
     }
     
-    let recaptchaResponse;
-    try {
-        recaptchaResponse = grecaptcha.getResponse();
-    } catch (error) {
-        console.error('❌ خطأ في reCAPTCHA:', error);
-        showAlert('⚠️ الرجاء إعادة تحميل الصفحة', 'danger');
-        return;
-    }
-    
-    if (!recaptchaResponse || recaptchaResponse === '') {
-        showAlert('⚠️ الرجاء التحقق من أنك لست روبوت', 'warning');
-        return;
-    }
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التسجيل...';
+    submitBtn.disabled = true;
     
     try {
+        // ✅ انتظار تحميل reCAPTCHA
+        let attempts = 0;
+        while (typeof grecaptcha === 'undefined' && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (typeof grecaptcha === 'undefined') {
+            showAlert('⚠️ فشل تحميل نظام الحماية. الرجاء إعادة تحميل الصفحة', 'danger');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        // الحصول على reCAPTCHA token
+        let recaptchaResponse;
+        try {
+            if (typeof grecaptcha.getResponse !== 'function') {
+                throw new Error('reCAPTCHA not ready');
+            }
+            
+            // ✅ محاولة الحصول على response من جميع الـ widgets
+            const widgets = document.querySelectorAll('.g-recaptcha');
+            if (widgets.length > 1) {
+                // إذا كان هناك أكثر من widget، استخدم الثاني (في form التسجيل)
+                recaptchaResponse = grecaptcha.getResponse(1);
+            } else {
+                recaptchaResponse = grecaptcha.getResponse();
+            }
+        } catch (error) {
+            console.error('❌ خطأ في reCAPTCHA:', error);
+            showAlert('⚠️ الرجاء الانتظار قليلاً ثم المحاولة مرة أخرى', 'warning');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        if (!recaptchaResponse || recaptchaResponse === '') {
+            showAlert('⚠️ الرجاء التحقق من أنك لست روبوت', 'warning');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        console.log('✅ reCAPTCHA Token:', recaptchaResponse.substring(0, 20) + '...');
+        
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
             headers: {
@@ -263,24 +301,49 @@ async function handleRegister(event) {
             
             // إعادة تعيين reCAPTCHA
             try {
-                grecaptcha.reset();
-            } catch (e) {}
+                if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.reset === 'function') {
+                    // إعادة تعيين الـ widget الثاني
+                    if (document.querySelectorAll('.g-recaptcha').length > 1) {
+                        grecaptcha.reset(1);
+                    } else {
+                        grecaptcha.reset();
+                    }
+                }
+            } catch (e) {
+                console.log('⚠️ تعذر إعادة تعيين reCAPTCHA');
+            }
             
             // إعادة تعيين الـ form
             event.target.reset();
             
-            // الانتقال لتسجيل الدخول بعد 3 ثواني
+            // التبديل إلى تسجيل الدخول
             setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 3000);
+                const tabs = document.querySelectorAll('.tab');
+                const forms = document.querySelectorAll('.form-content');
+                tabs.forEach(t => t.classList.remove('active'));
+                forms.forEach(f => f.classList.remove('active'));
+                tabs[0].classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            }, 2000);
             
         } else {
             showAlert(data.message || 'خطأ في التسجيل', 'danger');
             
             // إعادة تعيين reCAPTCHA
             try {
-                grecaptcha.reset();
-            } catch (e) {}
+                if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.reset === 'function') {
+                    if (document.querySelectorAll('.g-recaptcha').length > 1) {
+                        grecaptcha.reset(1);
+                    } else {
+                        grecaptcha.reset();
+                    }
+                }
+            } catch (e) {
+                console.log('⚠️ تعذر إعادة تعيين reCAPTCHA');
+            }
+            
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
         
     } catch (error) {
@@ -289,11 +352,21 @@ async function handleRegister(event) {
         
         // إعادة تعيين reCAPTCHA
         try {
-            grecaptcha.reset();
-        } catch (e) {}
+            if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.reset === 'function') {
+                if (document.querySelectorAll('.g-recaptcha').length > 1) {
+                    grecaptcha.reset(1);
+                } else {
+                    grecaptcha.reset();
+                }
+            }
+        } catch (e) {
+            console.log('⚠️ تعذر إعادة تعيين reCAPTCHA');
+        }
+        
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
-
 // ==========================================
 // Alert System
 // ==========================================

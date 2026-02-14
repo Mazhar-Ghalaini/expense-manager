@@ -343,7 +343,7 @@ router.post('/register', generalLimiter, async (req, res) => {
     
     console.log('✅ reCAPTCHA نجح');
     
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password) {
       return res.status(400).json({ 
         success: false,
         message: 'الرجاء ملء جميع الحقول المطلوبة' 
@@ -351,7 +351,7 @@ router.post('/register', generalLimiter, async (req, res) => {
     }
 
     
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password) {
       return res.status(400).json({ 
         success: false,
         message: 'الرجاء ملء جميع الحقول المطلوبة' 

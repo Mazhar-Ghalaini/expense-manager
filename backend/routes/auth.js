@@ -7,22 +7,30 @@ const { protect } = require('../middleware/auth');
 const { getCurrency } = require('../config/currencies');
 
 // ==========================================
-// ✅ دالة التحقق من reCAPTCHA
+// ✅ دالة التحقق من reCAPTCHA (محدّثة)
 // ==========================================
 async function verifyRecaptcha(token) {
+  console.log('🔍 بدء التحقق من reCAPTCHA...');
+  console.log('📝 Token:', token ? token.substring(0, 30) + '...' : 'null');
+  
   if (!token) {
+    console.log('❌ Token فارغ');
     return { success: false, message: 'رمز reCAPTCHA مفقود' };
   }
   
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
   
   if (!secretKey) {
-    console.error('❌ RECAPTCHA_SECRET_KEY غير موجود');
+    console.error('❌ RECAPTCHA_SECRET_KEY غير موجود في Environment Variables');
     return { success: false, message: 'خطأ في إعدادات الخادم' };
   }
   
+  console.log('✅ Secret Key موجود:', secretKey.substring(0, 10) + '...');
+  
   try {
     const axios = require('axios');
+    
+    console.log('📡 إرسال طلب إلى Google...');
     
     const response = await axios.post(
       'https://www.google.com/recaptcha/api/siteverify',
@@ -31,31 +39,59 @@ async function verifyRecaptcha(token) {
         params: {
           secret: secretKey,
           response: token
-        }
+        },
+        timeout: 10000 // 10 ثواني
       }
     );
     
-    console.log('🔍 reCAPTCHA Response:', response.data);
+    console.log('📥 استجابة Google:', JSON.stringify(response.data, null, 2));
     
     if (response.data.success) {
+      console.log('✅ reCAPTCHA صالح!');
       return { success: true };
     } else {
+      console.log('❌ reCAPTCHA فشل!');
+      console.log('📋 Error Codes:', response.data['error-codes']);
+      
+      // تفسير الأخطاء
+      const errorCodes = response.data['error-codes'] || [];
+      let message = 'فشل التحقق من reCAPTCHA';
+      
+      if (errorCodes.includes('missing-input-secret')) {
+        message = 'خطأ: Secret Key مفقود';
+      } else if (errorCodes.includes('invalid-input-secret')) {
+        message = 'خطأ: Secret Key غير صحيح';
+      } else if (errorCodes.includes('missing-input-response')) {
+        message = 'خطأ: Token مفقود';
+      } else if (errorCodes.includes('invalid-input-response')) {
+        message = 'خطأ: Token غير صحيح أو منتهي';
+      } else if (errorCodes.includes('timeout-or-duplicate')) {
+        message = 'خطأ: Token منتهي أو مستخدم مسبقاً';
+      }
+      
       return { 
         success: false, 
-        message: 'فشل التحقق من reCAPTCHA',
-        errors: response.data['error-codes']
+        message,
+        errors: errorCodes
       };
     }
     
   } catch (error) {
-    console.error('❌ خطأ في التحقق من reCAPTCHA:', error.message);
+    console.error('❌ خطأ في الاتصال بـ Google reCAPTCHA:', error.message);
+    
+    if (error.code === 'ECONNABORTED') {
+      return { 
+        success: false, 
+        message: 'انتهت مهلة الاتصال بخدمة reCAPTCHA' 
+      };
+    }
+    
     return { 
       success: false, 
-      message: 'خطأ في الاتصال بخدمة reCAPTCHA' 
+      message: 'خطأ في الاتصال بخدمة reCAPTCHA: ' + error.message
     };
   }
 }
-
 
 // ==========================================
 // إعدادات الحماية
